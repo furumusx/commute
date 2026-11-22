@@ -162,7 +162,7 @@
 </nav>
 <script>
 "use strict";
-const APP_VER = "1.2.0";
+const APP_VER = "1.2.1";
 
 /* ===== データ（記録の追加はここを書き換えて再公開する） ===== */
 const DATA = {
@@ -223,7 +223,7 @@ const DATA = {
     ],
     "上之園": [
       { name: "テクノパーキング甲南ロイヤル第2", addr: "上之園町15-11", distM: 350, walkMin: 5, dayCost: 500, spaces: 7, fee: "60分100円・入庫後24時間最大500円", note: "" },
-      { name: "システムパーク上之園町", addr: "上之園町14", distM: 220, walkMin: 3, dayCost: 600, spaces: 9, fee: "60分100円・昼間(8-20時)上限600円・夜間上限500円", note: "" },
+      { name: "システムパーク上之園町", addr: "上之園町14", distM: 220, walkMin: 3, dayCost: 600, spaces: 9, fee: "60分100円・昼間(8-20時)上限600円・夜間上限500円", note: "Googleマップに名称登録なし（リンクは座標指定）", mapCoord: "31.581926,130.548275" },
       { name: "テクノパーキング甲南ロイヤル第1", addr: "上之園町15-11", distM: 350, walkMin: 5, dayCost: 600, spaces: 13, fee: "60分100円・入庫後24時間最大600円", note: "第2と隣接。間違えやすい" },
       { name: "トラストパーク上之園", addr: "上之園町14-10", distM: 250, walkMin: 3, dayCost: 600, spaces: 5, fee: "60分100円・平日 入庫後12時間最大600円・土日祝400円・夜間最大300円", note: "集約サイトでは平日500円の表記もあり（公式は600円）" },
       { name: "テクノパーキング高麗町第7", addr: "高麗町10-20", distM: 270, walkMin: 4, dayCost: 600, spaces: null, fee: "80分100円・24時間最大600円・夜間最大200円", note: "" },
@@ -374,6 +374,8 @@ function navUrlFor(data, facility) {
 }
 function mapUrlFor(lot) {
   if (lot.mapUrl) return lot.mapUrl;
+  // v1.2.1: mapCoord（"緯度,経度"）がある駐車場は座標検索（Googleマップに名称登録が無い所用）
+  if (lot.mapCoord) return MAP_BASE + encodeURIComponent(lot.mapCoord);
   return MAP_BASE + encodeURIComponent(lot.name + " 鹿児島市" + lot.addr);
 }
 /** 駐車場の並び替え（v1.2.0）。mode: "rec"＝おすすめ順（データ順）／"cheap"＝安い順／"near"＝近い順
