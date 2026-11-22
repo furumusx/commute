@@ -217,7 +217,7 @@
 </nav>
 <script>
 "use strict";
-const APP_VER = "1.4.0";
+const APP_VER = "1.4.1";
 
 /* ===== データ（記録の追加はここを書き換えて再公開する） ===== */
 const DATA = {
@@ -454,7 +454,7 @@ function saveRecords(storage, recs) {
 function newRecordId() {
   return "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
-const recordStore = { storage: undefined, data: null };
+const recordStore = { storage: undefined, data: null, onChange: null };
 function currentRecords() {
   if (!recordStore.data) {
     recordStore.storage = getStorage();
@@ -468,13 +468,18 @@ function addRecord(rec) {
   if (!c) return null;
   currentRecords().push(c);
   saveRecords(recordStore.storage, recordStore.data);
+  if (recordStore.onChange) recordStore.onChange();
   return c;
 }
 function deleteRecord(id) {
   const before = currentRecords().length;
   recordStore.data = recordStore.data.filter((r) => r.id !== id);
-  if (recordStore.data.length !== before) saveRecords(recordStore.storage, recordStore.data);
-  return recordStore.data.length !== before;
+  const changed = recordStore.data.length !== before;
+  if (changed) {
+    saveRecords(recordStore.storage, recordStore.data);
+    if (recordStore.onChange) recordStore.onChange();
+  }
+  return changed;
 }
 
 /* ===== 計算（DOM を使わない純粋関数。tests/test_data.js からも呼ぶ） ===== */
@@ -523,12 +528,25 @@ function nextWorkShift(shifts, ymd) {
   const d = Object.keys(shifts).filter((k) => k > ymd && placeNames(shifts[k]).length).sort()[0];
   return d ? shiftOn(shifts, d) : null;
 }
-/** 施設への「行き」集計。0件なら count:0 と null */
-function outboundStats(data, facility) {
-  const xs = data.samples.filter((s) => s.dir === "行き" && s.facility === facility).map((s) => s.minutes);
-  if (!xs.length) return { count: 0, min: null, max: null, avg: null };
+/** v1.4.1: 実測集計に入れるユーザー記録の所要時間の範囲（分） */
+const USER_MIN_MINUTES = 5;
+const USER_MAX_MINUTES = 180;
+/** v1.4.1: ユーザー記録のうち、施設への「行き」で出発・到着が両方あり所要 5〜180分のものの所要（分）の配列 */
+function userOutboundMinutes(userRecs, facility) {
+  return (userRecs || [])
+    .filter((r) => r && r.dir === "out" && PLACE_IDS[r.fac] === facility && r.dep && r.arr)
+    .map((r) => durationMin(r.dep, r.arr))
+    .filter((m) => m >= USER_MIN_MINUTES && m <= USER_MAX_MINUTES);
+}
+/** 施設への「行き」集計。0件なら count:0 と null。
+ *  v1.4.1: userRecs（commute.records.v1 の配列）を渡すと条件を満たす記録を合算し、userCount にその件数を入れる */
+function outboundStats(data, facility, userRecs) {
+  const base = data.samples.filter((s) => s.dir === "行き" && s.facility === facility).map((s) => s.minutes);
+  const mine = userOutboundMinutes(userRecs, facility);
+  const xs = base.concat(mine);
+  if (!xs.length) return { count: 0, min: null, max: null, avg: null, userCount: 0 };
   const sum = xs.reduce((a, b) => a + b, 0);
-  return { count: xs.length, min: Math.min(...xs), max: Math.max(...xs), avg: Math.round((sum / xs.length) * 10) / 10 };
+  return { count: xs.length, min: Math.min(...xs), max: Math.max(...xs), avg: Math.round((sum / xs.length) * 10) / 10, userCount: mine.length };
 }
 /** 到着見込み "08:18〜08:25頃"。実測なしなら null */
 function arrivalWindow(depart, stats) {
@@ -552,17 +570,21 @@ function recommendedRoute(data, facility) {
   return rs.find((r) => r.recommended) || rs[0] || null;
 }
 /** 代表所要レンジ：「行き」実測が1件以上なら実測、無ければ推奨ルートの予想。どちらも無ければ null */
-function representativeRange(data, facility) {
-  const st = outboundStats(data, facility);
+function representativeRange(data, facility, userRecs) {
+  const st = outboundStats(data, facility, userRecs);
   const rr = recommendedRoute(data, facility);
   const predicted = rr && rr.predicted ? { min: rr.predicted.min, max: rr.predicted.max } : null;
   if (st.count) return { min: st.min, max: st.max, source: "実測", measured: st, predicted };
   if (predicted) return { min: predicted.min, max: predicted.max, source: "予想", measured: st, predicted };
   return null;
 }
-/** 内訳の文字列 例: "実測 48〜55分・3件 ／ 予想 24〜55分" */
+/** 内訳の文字列 例: "実測 48〜55分・3件 ／ 予想 24〜55分"
+ *  v1.4.1: ユーザー記録を含むときは "実測 45〜55分・4件（あなたの記録1件を含む） ／ 予想 24〜55分" */
 function rangeBreakdown(rep) {
-  const a = rep.measured && rep.measured.count ? "実測 " + rangeText(rep.measured) + "・" + rep.measured.count + "件" : "実測なし";
+  const m = rep.measured;
+  const a = m && m.count
+    ? "実測 " + rangeText(m) + "・" + m.count + "件" + (m.userCount ? "（あなたの記録" + m.userCount + "件を含む）" : "")
+    : "実測なし";
   const b = rep.predicted ? "予想 " + rangeText(rep.predicted) : "予想なし";
   return a + " ／ " + b;
 }
@@ -658,7 +680,7 @@ function formatFee(fee) {
   return fee.toLocaleString("ja-JP") + "円";
 }
 
-const CommuteCore = { APP_VER, DATA, toMin, fromMin, durationMin, todayTokyo, nowMinTokyo, weekdayOf, splitPlace, shiftOn, nextWorkShift, outboundStats, arrivalWindow, recommendedRoute, representativeRange, rangeBreakdown, arrivalFromNow, routeTimeText, routeKind, navUrlFor, mapUrlFor, samplesNewestFirst, formatFee, sortLots, PARK_SORTS, yen,
+const CommuteCore = { APP_VER, DATA, toMin, fromMin, durationMin, todayTokyo, nowMinTokyo, weekdayOf, splitPlace, shiftOn, nextWorkShift, outboundStats, arrivalWindow, recommendedRoute, representativeRange, rangeBreakdown, arrivalFromNow, routeTimeText, routeKind, navUrlFor, mapUrlFor, samplesNewestFirst, userOutboundMinutes, formatFee, sortLots, PARK_SORTS, yen,
   PLACE_IDS, SHIFT_KEY, DEFAULT_SHIFTS, cleanShifts, loadShifts, saveShifts, toggleShiftPlace, placeNames, shiftLabel, daysInMonth, addMonth, monthDates,
   RECORD_KEY, cleanRecord, cleanRecords, loadRecords, saveRecords, mergedRecords, monthlyParking, addDays, tomorrowInfo };
 globalThis.CommuteCore = CommuteCore;
@@ -731,7 +753,7 @@ function parkingSection(selected, others) {
 
 /** 主カード「今出発すると、到着は HH:MM〜HH:MM頃」 */
 function nowCard(facility, nowMin) {
-  const rep = representativeRange(DATA, facility);
+  const rep = representativeRange(DATA, facility, currentRecords()); // v1.4.1: ユーザー記録も実測に合算
   const arr = arrivalFromNow(nowMin, rep);
   return el("div", { class: "card now-card" }, [
     el("div", { class: "label", text: "今出発すると（" + fromMin(nowMin) + "発・" + facility + "）、到着は" }),
@@ -870,8 +892,11 @@ function renderSamples(view, ymd) {
 
   view.appendChild(el("h2", { text: "実走記録の集計（施設別「行き」）" }));
   const tbody = el("tbody");
+  const userRecs = currentRecords();
+  let userIncluded = 0;
   for (const f of Object.keys(DATA.facilities)) {
-    const st = outboundStats(DATA, f);
+    const st = outboundStats(DATA, f, userRecs); // v1.4.1: ユーザー記録（行き・時刻あり・5〜180分）を合算
+    userIncluded += st.userCount;
     tbody.appendChild(el("tr", null, st.count
       ? [el("td", { text: f }), el("td", { text: st.min + "分" }), el("td", { text: st.max + "分" }), el("td", { text: st.avg + "分" }), el("td", { text: st.count + "件" })]
       : [el("td", { text: f }), el("td", { colspan: "4", text: "実測なし" })]));
@@ -880,6 +905,7 @@ function renderSamples(view, ymd) {
     el("thead", null, [el("tr", null, ["施設", "最小", "最大", "平均", "件数"].map((t) => el("th", { text: t })))]),
     tbody
   ])]));
+  if (userIncluded) view.appendChild(el("div", { class: "fine stats-note", text: "※あなたの記録" + userIncluded + "件を含みます（行き・出発と到着あり・所要" + USER_MIN_MINUTES + "〜" + USER_MAX_MINUTES + "分のもの）" }));
   view.appendChild(el("h2", { text: "実走記録（新しい順）" }));
   for (const s of rows) {
     let del = null;
@@ -1097,6 +1123,11 @@ function boot() {
   for (const b of document.querySelectorAll("nav.tabbar button")) b.addEventListener("click", () => show(b.dataset.tab));
   // v1.3.0: シフトを編集したら今日タブ（今日の勤務・次の勤務・行き先の初期選択）を描き直す
   shiftStore.onChange = () => renderToday(views.today, renderedFor || todayTokyo(), nowMinTokyo());
+  // v1.4.1: 記録を追加・削除したら「今出発すると」カードの実測レンジを更新（選択中の行き先は維持）
+  recordStore.onChange = () => {
+    const old = views.today.querySelector(".now-card");
+    if (old && todayState.facility) old.replaceWith(nowCard(todayState.facility, nowMinTokyo()));
+  };
   // v1.3.0: ダブルタップ拡大の無効化（入力欄は除外）
   document.addEventListener("dblclick", (e) => {
     const t = e.target;
