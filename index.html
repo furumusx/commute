@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="通勤">
+<meta name="theme-color" content="#1f4e79">
+<title>通勤ダッシュボード</title>
+<style>
+  :root {
+    --bg: #f3f5f8;
+    --card: #ffffff;
+    --text: #1b1f24;
+    --muted: #5f6b7a;
+    --line: #dde3ea;
+    --accent: #1f4e79;
+    --accent-soft: #e6eef7;
+    --free: #1b7f3b;
+    --free-soft: #e3f4e8;
+    --warn: #9a5b00;
+    --warn-soft: #fff3df;
+    --tabbar-h: 64px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12161b; --card: #1c222a; --text: #e9edf2; --muted: #9aa6b4; --line: #2c343e;
+      --accent: #7fb2e5; --accent-soft: #1f2d3c; --free: #6fd08f; --free-soft: #17301f;
+      --warn: #f0b860; --warn-soft: #33270f;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
+    font-size: 17px; line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+    overflow-wrap: anywhere; word-break: normal;
+  }
+  header.appbar {
+    position: sticky; top: 0; z-index: 5;
+    background: var(--accent); color: #fff;
+    padding: calc(env(safe-area-inset-top) + 10px) 16px 10px;
+    font-weight: 700; font-size: 18px;
+  }
+  @media (prefers-color-scheme: dark) { header.appbar { color: #0e1620; } }
+  main {
+    max-width: 640px; margin: 0 auto;
+    padding: 14px 14px calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 20px);
+  }
+  section.view[hidden] { display: none; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 14px 16px; margin-bottom: 12px;
+  }
+  .date-big { font-size: 30px; font-weight: 800; line-height: 1.2; }
+  .date-sub { color: var(--muted); font-size: 15px; }
+  .label { color: var(--muted); font-size: 14px; font-weight: 600; }
+  .facility { font-size: 28px; font-weight: 800; line-height: 1.25; margin-top: 2px; }
+  .off { font-size: 26px; font-weight: 800; }
+  .pill {
+    display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 14px; font-weight: 700;
+    background: var(--accent-soft); color: var(--accent); margin-top: 6px;
+  }
+  .pill.free { background: var(--free-soft); color: var(--free); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .grid3 { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .metric { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .metric:last-child { border-bottom: none; }
+  .metric .v { font-size: 22px; font-weight: 800; text-align: right; }
+  .metric .v small { font-size: 14px; font-weight: 600; color: var(--muted); }
+  h2 { font-size: 18px; margin: 18px 4px 8px; }
+  .park-name { font-size: 18px; font-weight: 800; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .park-row { font-size: 15px; margin-top: 4px; }
+  .park-row .k { color: var(--muted); display: inline-block; min-width: 3.5em; }
+  .park-fee { font-size: 17px; font-weight: 700; }
+  a.btn {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 48px; margin-top: 10px; border-radius: 12px;
+    background: var(--accent); color: #fff; text-decoration: none; font-weight: 700; font-size: 16px;
+  }
+  @media (prefers-color-scheme: dark) { a.btn { color: #0e1620; } }
+  details.more { margin-top: 4px; }
+  details.more > summary {
+    cursor: pointer; min-height: 48px; display: flex; align-items: center; padding: 0 14px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px; font-weight: 700;
+    list-style: none;
+  }
+  details.more > summary::-webkit-details-marker { display: none; }
+  details.more[open] > summary { margin-bottom: 12px; }
+  .empty { color: var(--muted); font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; }
+  .stats td, .stats th { padding: 8px 4px; text-align: right; border-bottom: 1px solid var(--line); font-size: 15px; }
+  .stats th:first-child, .stats td:first-child { text-align: left; }
+  .stats th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  .sample-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .sample-head .d { font-weight: 800; font-size: 17px; }
+  .dir { font-size: 13px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+  .dir.back { background: var(--warn-soft); color: var(--warn); }
+  .sample-time { font-size: 20px; font-weight: 800; margin-top: 4px; }
+  .sample-time small { font-size: 15px; color: var(--muted); font-weight: 600; }
+  .shift-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); min-height: 52px; }
+  .shift-row:last-child { border-bottom: none; }
+  .shift-row .sd { width: 5.2em; flex: none; font-weight: 700; }
+  .shift-row .sw { width: 1.6em; flex: none; color: var(--muted); }
+  .shift-row .sw.sun { color: #c0392b; } .shift-row .sw.sat { color: #2471a3; }
+  .shift-row .sp { flex: 1; min-width: 0; font-weight: 700; }
+  .shift-row .sp.off { color: var(--muted); font-weight: 600; font-size: 17px; }
+  .shift-row.today { background: var(--accent-soft); border-left: 5px solid var(--accent); }
+  .shift-row.today .sd::after { content: "今日"; margin-left: 4px; font-size: 11px; background: var(--accent); color: #fff; padding: 1px 5px; border-radius: 6px; vertical-align: 2px; }
+  .shift-list { padding: 0; overflow: hidden; }
+  .chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 4px 0 12px; }
+  .chips button {
+    appearance: none; font-family: inherit; font-size: 17px; font-weight: 800; min-height: 48px;
+    border-radius: 999px; border: 2px solid var(--line); background: var(--card); color: var(--text);
+  }
+  .chips button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: #fff; }
+  @media (prefers-color-scheme: dark) { .chips button[aria-pressed="true"] { color: #0e1620; } }
+  .now-arrive { font-size: 34px; font-weight: 800; line-height: 1.2; margin-top: 2px; }
+  .now-sub { color: var(--muted); font-size: 14px; margin-top: 6px; }
+  .route-name { font-size: 17px; font-weight: 800; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .route-time { font-size: 20px; font-weight: 800; margin-top: 4px; }
+  .route-time small { font-size: 14px; color: var(--muted); font-weight: 600; }
+  .fine { color: var(--muted); font-size: 13px; margin: 4px 4px 12px; }
+  footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 20px; }
+  nav.tabbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    background: var(--card); border-top: 1px solid var(--line);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  nav.tabbar button {
+    appearance: none; border: none; background: none; color: var(--muted);
+    min-height: var(--tabbar-h); font-size: 16px; font-weight: 700; font-family: inherit;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  }
+  nav.tabbar button .ic { font-size: 20px; line-height: 1; }
+  nav.tabbar button[aria-selected="true"] { color: var(--accent); box-shadow: inset 0 3px 0 var(--accent); }
+</style>
+</head>
+<body>
+<header class="appbar">通勤ダッシュボード <span style="font-weight:500;font-size:14px;opacity:.85">清和から</span></header>
+<main>
+  <section class="view" id="view-today" aria-label="今日"></section>
+  <section class="view" id="view-samples" aria-label="記録" hidden></section>
+  <section class="view" id="view-shift" aria-label="シフト" hidden></section>
+  <footer>通勤ダッシュボード v<span id="app-ver"></span></footer>
+</main>
+<nav class="tabbar" role="tablist">
+  <button type="button" role="tab" data-tab="today" aria-selected="true"><span class="ic">☀︎</span>今日</button>
+  <button type="button" role="tab" data-tab="samples" aria-selected="false"><span class="ic">⏱</span>記録</button>
+  <button type="button" role="tab" data-tab="shift" aria-selected="false"><span class="ic">▦</span>シフト</button>
+</nav>
+<script>
+"use strict";
+const APP_VER = "1.1.0";
+
+/* ===== データ（記録の追加はここを書き換えて再公開する） ===== */
+const DATA = {
+  homeArea: "清和",
+  shiftHours: "日勤 9:00–18:00",
+  // v1.1.0 で画面表示を廃止（データとしては残す）
+  departByFacility: { "東千石": "07:30", "上之園": "07:30", "上荒田": "07:30" },
+  // ナビの出発地（Googleマップ経路検索の origin）
+  navOrigin: "鹿児島市清和4丁目",
+  facilities: {
+    "東千石": { address: "鹿児島市東千石町4-17" },
+    "上之園": { address: "鹿児島市上之園町4-15" },
+    "上荒田": { address: "鹿児島市上荒田町31-12" }
+  },
+  // place: 施設名（複合日は「・」区切り、先頭が朝の行き先）／ null は休み
+  shifts: [
+    { date: "2026-11-16", place: "東千石" },
+    { date: "2026-11-17", place: "東千石・上之園" },
+    { date: "2026-11-18", place: "東千石" },
+    { date: "2026-11-19", place: "上之園" },
+    { date: "2026-11-20", place: null },
+    { date: "2026-11-21", place: null },
+    { date: "2026-11-22", place: null },
+    { date: "2026-11-23", place: "東千石・上之園" },
+    { date: "2026-11-24", place: "上荒田" },
+    { date: "2026-11-25", place: "東千石" },
+    { date: "2026-11-26", place: "東千石" },
+    { date: "2026-11-27", place: "上之園・上荒田" },
+    { date: "2026-11-28", place: null },
+    { date: "2026-11-29", place: null },
+    { date: "2026-11-30", place: "東千石・上之園" }
+  ],
+  // fee: 駐車代（円）。null は未確定。memo: null はメモなし
+  samples: [
+    { no: 1, date: "2026-11-16", dir: "行き", facility: "東千石", depart: "07:30", arrive: "08:18", minutes: 48, parking: "コインパーク鹿児島", fee: null, memo: "昼間は上限なし" },
+    { no: 2, date: "2026-11-16", dir: "帰り", facility: "上之園", depart: "18:05", arrive: "18:52", minutes: 47, parking: "近隣の有料駐車場（名称未確認）", fee: 500, memo: null },
+    { no: 3, date: "2026-11-17", dir: "行き", facility: "東千石", depart: "07:30", arrive: "08:25", minutes: 55, parking: "職員駐車場（無料）", fee: 0, memo: null },
+    { no: 4, date: "2026-11-18", dir: "行き", facility: "東千石", depart: "07:35", arrive: "08:23", minutes: 48, parking: "職員駐車場（無料）", fee: 0, memo: null },
+    { no: 5, date: "2026-11-19", dir: "行き", facility: "上之園", depart: "07:42", arrive: "08:19", minutes: 37, parking: "テクノパーキング甲南ロイヤル第1", fee: 600, memo: "第2（500円）と取り違え" }
+  ],
+  // 表示順＝おすすめ順。mapUrl があればそれを使い、無ければ「名称＋住所」で検索リンクを作る
+  parking: {
+    "東千石": [
+      { name: "職員駐車場", address: "照国町16-16", fee: "無料", note: "3台・先着順", staff: true, free: true, mapUrl: "https://www.google.com/maps/search/?api=1&query=31.59302,130.55271" },
+      { name: "テクノパーキング照国町第5", address: "照国町3", fee: "24時間最大500円", note: "60分100円" },
+      { name: "テクノパーキング照国ガレージ", address: "照国町9-21", fee: "24時間最大600円", note: "60分100円・8台" },
+      { name: "タイムズ照国町", address: "照国町10", fee: "24時間最大600円", note: "" },
+      { name: "南国照国パーキングDO24", address: "照国町12-8", fee: "2Fのみ 7:00–19:00 最大700円", note: "1Fは同時間帯1,200円なので2F必須" }
+    ],
+    "上之園": [
+      { name: "テクノパーキング甲南ロイヤル第2", address: "上之園町15-1", fee: "24時間最大500円", note: "60分100円" },
+      { name: "テクノパーキング甲南ロイヤル第1", address: "上之園町15-11", fee: "24時間最大600円", note: "60分100円／第2と隣同士・取り違え注意" },
+      { name: "トラストパーク上之園", address: "上之園町14-10", fee: "平日12時間最大600円・土日祝400円", note: "60分100円・5台" },
+      { name: "システムパーク上之園町", address: "上之園町14", fee: "8:00–20:00 上限600円", note: "60分100円・9台" }
+    ],
+    "上荒田": [
+      { name: "上荒田Mパーキング", address: "上荒田町31-9", fee: "12時間最大500円", note: "60分100円・施設の隣（約40m）", unverified: true, source: "NAVITIME" },
+      { name: "テクノパーキング上荒田町第8", address: "上荒田町", fee: "24時間最大500円", note: "60分100円・施設から約80m", unverified: true, source: "NAVITIME" },
+      { name: "セイワパーク上荒田町", address: "上荒田町28-8", fee: "入庫から24時間最大500円", note: "60分100円・7台・現金のみ（運営公式で確認）" },
+      { name: "テクノパーキング上荒田町第6", address: "上荒田町16-14", fee: "24時間最大500円", note: "60分100円", unverified: true, source: "NAVITIME" },
+      { name: "タイムズ荒田第13", address: "荒田1-51", fee: "駐車後24時間最大600円", note: "60分100円・5台（運営公式で確認）" }
+    ]
+  },
+  // ルート候補（表示順＝データ順）。predicted: Googleマップ渋滞予想の分レンジ／measured: 実測の分レンジ／km: null は距離不明
+  routeNote: "予想はGoogleマップの渋滞予想（木曜07:30発・有料道路回避、2026-11-19／11-22取得）",
+  routes: {
+    "東千石": [
+      { name: "谷山街道経由（国道225号＋県道20号）", predicted: { min: 24, max: 55 }, measured: null, km: 9.5, recommended: true },
+      { name: "産業道路経由（県道217号）", predicted: null, measured: { min: 48, max: 55, count: 3 }, km: null },
+      { name: "中山バイパス経由", predicted: { min: 35, max: 60 }, measured: null, km: 11.7 }
+    ],
+    "上之園": [
+      { name: "谷山街道経由（国道225号＋県道20号）", predicted: { min: 24, max: 50 }, measured: { min: 37, max: 37, count: 1 }, km: 8.8, recommended: true },
+      { name: "産業道路経由（県道217号）", predicted: { min: 26, max: 50 }, measured: null, km: 10.2 }
+    ],
+    "上荒田": [
+      { name: "谷山街道経由（国道225号＋県道20号）", predicted: { min: 22, max: 45 }, measured: null, km: 7.6, recommended: true },
+      { name: "産業道路経由（県道217号）", predicted: { min: 24, max: 45 }, measured: null, km: 8.5 },
+      { name: "中山バイパス経由", predicted: { min: 30, max: 45 }, measured: null, km: 9.5 }
+    ]
+  }
+};
+
+/* ===== 計算（DOM を使わない純粋関数。tests/test_data.js からも呼ぶ） ===== */
+const WEEK = ["日", "月", "火", "水", "木", "金", "土"];
+const MAP_BASE = "https://www.google.com/maps/search/?api=1&query=";
+
+function toMin(hhmm) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm);
+  if (!m) throw new Error("bad time: " + hhmm);
+  return Number(m[1]) * 60 + Number(m[2]);
+}
+function fromMin(min) {
+  const t = ((min % 1440) + 1440) % 1440;
+  return String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0");
+}
+function durationMin(depart, arrive) {
+  let d = toMin(arrive) - toMin(depart);
+  if (d < 0) d += 1440;
+  return d;
+}
+/** Asia/Tokyo の今日を YYYY-MM-DD で返す */
+function todayTokyo(now) {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(now || new Date());
+  const get = (t) => parts.find((p) => p.type === t).value;
+  return get("year") + "-" + get("month") + "-" + get("day");
+}
+/** YYYY-MM-DD の曜日（暦日として計算するのでタイムゾーンに依存しない） */
+function weekdayOf(ymd) {
+  const [y, m, d] = ymd.split("-").map(Number);
+  return WEEK[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+}
+function weekdayIndex(ymd) {
+  const [y, m, d] = ymd.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+}
+function splitPlace(place) {
+  return place ? place.split("・").map((s) => s.trim()).filter(Boolean) : [];
+}
+function shiftOn(data, ymd) {
+  return data.shifts.find((s) => s.date === ymd) || null;
+}
+function nextWorkShift(data, ymd) {
+  return data.shifts.filter((s) => s.date > ymd && s.place).sort((a, b) => a.date.localeCompare(b.date))[0] || null;
+}
+/** 施設への「行き」集計。0件なら count:0 と null */
+function outboundStats(data, facility) {
+  const xs = data.samples.filter((s) => s.dir === "行き" && s.facility === facility).map((s) => s.minutes);
+  if (!xs.length) return { count: 0, min: null, max: null, avg: null };
+  const sum = xs.reduce((a, b) => a + b, 0);
+  return { count: xs.length, min: Math.min(...xs), max: Math.max(...xs), avg: Math.round((sum / xs.length) * 10) / 10 };
+}
+/** 到着見込み "08:18〜08:25頃"。実測なしなら null */
+function arrivalWindow(depart, stats) {
+  if (!stats || !stats.count) return null;
+  const d = toMin(depart);
+  if (stats.min === stats.max) return fromMin(d + stats.min) + "頃";
+  return fromMin(d + stats.min) + "〜" + fromMin(d + stats.max) + "頃";
+}
+/** Asia/Tokyo の現在時刻を 0:00 からの分で返す */
+function nowMinTokyo(now) {
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(now || new Date());
+  const get = (t) => Number(parts.find((p) => p.type === t).value);
+  return get("hour") * 60 + get("minute");
+}
+function rangeText(r) {
+  return r.min === r.max ? r.min + "分" : r.min + "〜" + r.max + "分";
+}
+/** 推奨ルート（recommended、無ければ先頭） */
+function recommendedRoute(data, facility) {
+  const rs = (data.routes && data.routes[facility]) || [];
+  return rs.find((r) => r.recommended) || rs[0] || null;
+}
+/** 代表所要レンジ：「行き」実測が1件以上なら実測、無ければ推奨ルートの予想。どちらも無ければ null */
+function representativeRange(data, facility) {
+  const st = outboundStats(data, facility);
+  const rr = recommendedRoute(data, facility);
+  const predicted = rr && rr.predicted ? { min: rr.predicted.min, max: rr.predicted.max } : null;
+  if (st.count) return { min: st.min, max: st.max, source: "実測", measured: st, predicted };
+  if (predicted) return { min: predicted.min, max: predicted.max, source: "予想", measured: st, predicted };
+  return null;
+}
+/** 内訳の文字列 例: "実測 48〜55分・3件 ／ 予想 24〜55分" */
+function rangeBreakdown(rep) {
+  const a = rep.measured && rep.measured.count ? "実測 " + rangeText(rep.measured) + "・" + rep.measured.count + "件" : "実測なし";
+  const b = rep.predicted ? "予想 " + rangeText(rep.predicted) : "予想なし";
+  return a + " ／ " + b;
+}
+/** 現在時刻(分)＋レンジで到着見込み "HH:MM〜HH:MM頃"（単値なら "HH:MM頃"） */
+function arrivalFromNow(nowMin, range) {
+  if (!range) return null;
+  return arrivalWindow(fromMin(nowMin), { count: 1, min: range.min, max: range.max });
+}
+/** ルート行の所要表示 例: "予想 24〜50分・実測37分（1件）" */
+function routeTimeText(r) {
+  const parts = [];
+  if (r.predicted) parts.push("予想 " + rangeText(r.predicted));
+  if (r.measured) parts.push("実測" + (r.predicted ? "" : " ") + rangeText(r.measured) + "（" + r.measured.count + "件）");
+  return parts.join("・") || "—";
+}
+function routeKind(r) {
+  return r.measured && r.predicted ? "予想＋実測" : r.measured ? "実測" : "予想";
+}
+function navUrlFor(data, facility) {
+  return "https://www.google.com/maps/dir/?api=1&origin=" + encodeURIComponent(data.navOrigin) +
+    "&destination=" + encodeURIComponent(data.facilities[facility].address) + "&travelmode=driving";
+}
+function mapUrlFor(lot) {
+  if (lot.mapUrl) return lot.mapUrl;
+  return MAP_BASE + encodeURIComponent(lot.name + " 鹿児島市" + lot.address);
+}
+function samplesNewestFirst(data) {
+  return data.samples.slice().sort((a, b) => b.date.localeCompare(a.date) || toMin(b.depart) - toMin(a.depart) || b.no - a.no);
+}
+function formatMD(ymd) {
+  const [, m, d] = ymd.split("-").map(Number);
+  return m + "/" + d;
+}
+function formatFee(fee) {
+  if (fee === null || fee === undefined) return "未確定";
+  if (fee === 0) return "0円（無料）";
+  return fee.toLocaleString("ja-JP") + "円";
+}
+
+const CommuteCore = { APP_VER, DATA, toMin, fromMin, durationMin, todayTokyo, nowMinTokyo, weekdayOf, splitPlace, shiftOn, nextWorkShift, outboundStats, arrivalWindow, recommendedRoute, representativeRange, rangeBreakdown, arrivalFromNow, routeTimeText, routeKind, navUrlFor, mapUrlFor, samplesNewestFirst, formatFee };
+globalThis.CommuteCore = CommuteCore;
+
+/* ===== 描画（テキストは textContent のみで入れる） ===== */
+function el(tag, attrs, children) {
+  const n = document.createElement(tag);
+  if (attrs) for (const k of Object.keys(attrs)) {
+    if (k === "class") n.className = attrs[k];
+    else if (k === "text") n.textContent = attrs[k];
+    else n.setAttribute(k, attrs[k]);
+  }
+  for (const c of [].concat(children || [])) {
+    if (c === null || c === undefined || c === false) continue;
+    n.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+  }
+  return n;
+}
+
+function parkingCards(facility) {
+  const lots = DATA.parking[facility] || [];
+  if (!lots.length) {
+    return [el("div", { class: "card" }, [el("div", { class: "empty", text: "駐車場は未調査" })])];
+  }
+  return lots.map((lot, i) => el("div", { class: "card park-card" }, [
+    el("div", { class: "park-name" }, [
+      (i + 1) + ". " + lot.name,
+      lot.free ? el("span", { class: "pill free", text: "無料" }) : null,
+      lot.staff ? el("span", { class: "pill", text: "職員用" }) : null,
+      lot.unverified ? el("span", { class: "pill warn", text: "現地未確認" }) : null
+    ]),
+    el("div", { class: "park-row" }, [el("span", { class: "k", text: "住所" }), lot.address]),
+    el("div", { class: "park-row park-fee" }, [el("span", { class: "k", text: "上限" }), lot.fee]),
+    lot.note ? el("div", { class: "park-row" }, [el("span", { class: "k", text: "備考" }), lot.note]) : null,
+    lot.unverified ? el("div", { class: "park-row" }, [el("span", { class: "k", text: "情報源" }), (lot.source || "集約サイト") + "の情報（現地未確認・看板が正）"]) : null,
+    el("a", { class: "btn", href: mapUrlFor(lot), target: "_blank", rel: "noopener noreferrer" }, ["Googleマップで開く"])
+  ]));
+}
+
+/** 主カード「今出発すると、到着は HH:MM〜HH:MM頃」 */
+function nowCard(facility, nowMin) {
+  const rep = representativeRange(DATA, facility);
+  const arr = arrivalFromNow(nowMin, rep);
+  return el("div", { class: "card now-card" }, [
+    el("div", { class: "label", text: "今出発すると（" + fromMin(nowMin) + "発・" + facility + "）、到着は" }),
+    el("div", { class: "now-arrive", text: arr || "目安なし" }),
+    rep ? el("div", { class: "now-sub", text: "所要 " + rangeText(rep) + "（" + rep.source + "）　内訳: " + rangeBreakdown(rep) }) : null
+  ]);
+}
+
+/** ルート候補（選択施設分だけ） */
+function routeCards(facility) {
+  const rs = (DATA.routes && DATA.routes[facility]) || [];
+  if (!rs.length) return [el("div", { class: "card" }, [el("div", { class: "empty", text: "ルートは未登録" })])];
+  const nav = navUrlFor(DATA, facility);
+  const out = rs.map((r, i) => el("div", { class: "card route-card" }, [
+    el("div", { class: "route-name" }, [
+      (i + 1) + ". " + r.name,
+      r.recommended ? el("span", { class: "pill", text: "推奨" }) : null
+    ]),
+    el("div", { class: "route-time" }, [routeTimeText(r)]),
+    el("div", { class: "park-row" }, [el("span", { class: "k", text: "距離" }), r.km === null || r.km === undefined ? "不明" : r.km + "km"]),
+    el("div", { class: "park-row" }, [el("span", { class: "k", text: "種別" }), routeKind(r)]),
+    el("a", { class: "btn", href: nav, target: "_blank", rel: "noopener noreferrer" }, ["ナビ開始（Googleマップ）"])
+  ]));
+  if (DATA.routeNote) out.push(el("div", { class: "fine route-note", text: "※" + DATA.routeNote + "。ナビ開始はGoogleマップが経路を選びます（上の経由道路は選び直してください）。" }));
+  return out;
+}
+
+/** 行き先セレクタ（東千石／上之園／上荒田） */
+function facilityChips(selected, onPick) {
+  return el("div", { class: "chips", role: "group", "aria-label": "行き先" }, Object.keys(DATA.facilities).map((f) => {
+    const b = el("button", { type: "button", class: "chip", "aria-pressed": String(f === selected), "data-facility": f, text: f });
+    b.addEventListener("click", () => onPick(f));
+    return b;
+  }));
+}
+
+/** 今日タブの選択状態（日付が変わったら初期選択に戻す） */
+const todayState = { date: null, facility: null };
+
+/**
+ * 今日タブ。selected: undefined なら初期選択（勤務日＝その日の先頭施設／休み＝選択なし）
+ * nowMin: 現在時刻（分）。省略時は Asia/Tokyo の現在時刻
+ */
+function renderToday(view, ymd, nowMin, selected) {
+  if (nowMin === undefined || nowMin === null) nowMin = nowMinTokyo();
+  const s = shiftOn(DATA, ymd);
+  const working = !!(s && s.place);
+  const places = working ? splitPlace(s.place) : [];
+  if (selected === undefined) selected = working ? places[0] : null;
+  todayState.date = ymd; todayState.facility = selected;
+
+  view.replaceChildren();
+  const [, m, d] = ymd.split("-").map(Number);
+  view.appendChild(el("div", { class: "card" }, [
+    el("div", { class: "date-big", text: m + "月" + d + "日（" + weekdayOf(ymd) + "）" }),
+    el("div", { class: "date-sub", text: ymd.slice(0, 4) + "年・" + DATA.homeArea + "から" })
+  ]));
+
+  if (working) {
+    view.appendChild(el("div", { class: "card" }, [
+      el("div", { class: "label", text: "今日の勤務（" + DATA.shiftHours + "）" }),
+      el("div", { class: "facility", text: places[0] }),
+      places.length > 1 ? el("span", { class: "pill warn", text: "複合日：" + places.join(" → ") + "（朝は" + places[0] + "）" }) : null
+    ]));
+  } else {
+    const next = nextWorkShift(DATA, ymd);
+    view.appendChild(el("div", { class: "card" }, [
+      el("div", { class: "off", text: s ? "今日は休み" : "今日のシフトは未登録" }),
+      next
+        ? el("div", { style: "margin-top:8px" }, [
+            el("div", { class: "label", text: "次の勤務" }),
+            el("div", { class: "facility", text: formatMD(next.date) + "（" + weekdayOf(next.date) + "） " + splitPlace(next.place)[0] }),
+            splitPlace(next.place).length > 1 ? el("span", { class: "pill warn", text: "複合日：" + splitPlace(next.place).join(" → ") }) : null
+          ])
+        : el("div", { class: "label", style: "margin-top:8px", text: "登録済みのシフトに次の勤務はありません" })
+    ]));
+  }
+
+  view.appendChild(el("h2", { text: "行き先" }));
+  view.appendChild(facilityChips(selected, (f) => renderToday(view, ymd, undefined, f)));
+  if (!selected) {
+    view.appendChild(el("div", { class: "fine", text: "行き先を選ぶと、ルート候補と駐車場を表示します。" }));
+    return;
+  }
+  // 休みの日は「今出発すると」カードを出さない
+  if (working) view.appendChild(nowCard(selected, nowMin));
+  view.appendChild(el("h2", { text: selected + "へのルート候補" }));
+  for (const n of routeCards(selected)) view.appendChild(n);
+  view.appendChild(el("h2", { text: selected + "の駐車場" }));
+  for (const n of parkingCards(selected)) view.appendChild(n);
+  // 複合日は、その日の他の施設の駐車場を折りたたみで併記（v1.0.0 から継続）
+  if (working && places.includes(selected)) {
+    for (const other of places.filter((p) => p !== selected)) {
+      view.appendChild(el("details", { class: "more" }, [el("summary", { text: "▸ " + other + "（同日のもう一方）の駐車場も見る" })].concat(parkingCards(other))));
+    }
+  }
+}
+
+function renderSamples(view) {
+  view.replaceChildren();
+  view.appendChild(el("h2", { text: "実走記録の集計（施設別「行き」）" }));
+  const tbody = el("tbody");
+  for (const f of Object.keys(DATA.facilities)) {
+    const st = outboundStats(DATA, f);
+    tbody.appendChild(el("tr", null, st.count
+      ? [el("td", { text: f }), el("td", { text: st.min + "分" }), el("td", { text: st.max + "分" }), el("td", { text: st.avg + "分" }), el("td", { text: st.count + "件" })]
+      : [el("td", { text: f }), el("td", { colspan: "4", text: "実測なし" })]));
+  }
+  view.appendChild(el("div", { class: "card" }, [el("table", { class: "stats" }, [
+    el("thead", null, [el("tr", null, ["施設", "最小", "最大", "平均", "件数"].map((t) => el("th", { text: t })))]),
+    tbody
+  ])]));
+  view.appendChild(el("h2", { text: "実走記録（新しい順）" }));
+  for (const s of samplesNewestFirst(DATA)) {
+    view.appendChild(el("div", { class: "card" }, [
+      el("div", { class: "sample-head" }, [
+        el("span", { class: "d", text: formatMD(s.date) + "（" + weekdayOf(s.date) + "） " + s.facility }),
+        el("span", { class: "dir" + (s.dir === "帰り" ? " back" : ""), text: s.dir })
+      ]),
+      el("div", { class: "sample-time" }, [s.depart + " → " + s.arrive, el("small", { text: "　" + s.minutes + "分" })]),
+      el("div", { class: "park-row" }, [el("span", { class: "k", text: "駐車場" }), s.parking]),
+      el("div", { class: "park-row" }, [el("span", { class: "k", text: "駐車代" }), formatFee(s.fee)]),
+      el("div", { class: "park-row" }, [el("span", { class: "k", text: "メモ" }), s.memo || "—"])
+    ]));
+  }
+}
+
+function renderShift(view, ymd) {
+  view.replaceChildren();
+  view.appendChild(el("h2", { text: "2026年11月のシフト（" + DATA.shiftHours + "）" }));
+  const list = el("div", { class: "card shift-list" });
+  for (const s of DATA.shifts.slice().sort((a, b) => a.date.localeCompare(b.date))) {
+    const wi = weekdayIndex(s.date);
+    list.appendChild(el("div", { class: "shift-row" + (s.date === ymd ? " today" : "") }, [
+      el("span", { class: "sd", text: formatMD(s.date) }),
+      el("span", { class: "sw" + (wi === 0 ? " sun" : wi === 6 ? " sat" : ""), text: WEEK[wi] }),
+      el("span", { class: "sp" + (s.place ? "" : " off"), text: s.place ? splitPlace(s.place).join(" → ") : "休み" })
+    ]));
+  }
+  view.appendChild(list);
+}
+
+function boot() {
+  document.getElementById("app-ver").textContent = APP_VER;
+  const views = { today: document.getElementById("view-today"), samples: document.getElementById("view-samples"), shift: document.getElementById("view-shift") };
+  let renderedFor = null;
+  let renderedMin = null;
+  function renderAll() {
+    const ymd = todayTokyo();
+    const nowMin = nowMinTokyo();
+    if (ymd !== renderedFor) {
+      renderedFor = ymd;
+      renderSamples(views.samples);
+      renderShift(views.shift, ymd);
+      renderedMin = nowMin;
+      renderToday(views.today, ymd, nowMin); // 日付が変わったら初期選択に戻す
+      return;
+    }
+    // 同じ日なら「今出発すると」の時刻だけ更新（選択中の行き先は維持）
+    if (nowMin !== renderedMin) {
+      renderedMin = nowMin;
+      const old = views.today.querySelector(".now-card");
+      if (old && todayState.facility) old.replaceWith(nowCard(todayState.facility, nowMin));
+    }
+  }
+  function show(tab) {
+    for (const k of Object.keys(views)) views[k].hidden = k !== tab;
+    for (const b of document.querySelectorAll("nav.tabbar button")) b.setAttribute("aria-selected", String(b.dataset.tab === tab));
+    window.scrollTo(0, 0);
+  }
+  for (const b of document.querySelectorAll("nav.tabbar button")) b.addEventListener("click", () => show(b.dataset.tab));
+  // ホーム画面アプリは開きっぱなしになりやすいので、復帰時に日付が変わっていれば描き直す
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) renderAll(); });
+  setInterval(() => { if (!document.hidden) renderAll(); }, 30000);
+  renderAll();
+  show("today");
+}
+
+if (typeof document !== "undefined") boot();
+</script>
+</body>
+</html>
