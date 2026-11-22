@@ -79,7 +79,10 @@
   .park-name { font-size: 18px; font-weight: 800; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
   .park-row { font-size: 15px; margin-top: 4px; }
   .park-row .k { color: var(--muted); display: inline-block; min-width: 3.5em; }
-  .park-fee { font-size: 17px; font-weight: 700; }
+  .park-cost { font-size: 22px; font-weight: 800; margin-top: 4px; }
+  .park-facts { font-size: 15px; font-weight: 700; margin-top: 2px; }
+  .park-note { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .sort-chips button { font-size: 15px; min-height: 44px; }
   a.btn {
     display: flex; align-items: center; justify-content: center;
     min-height: 48px; margin-top: 10px; border-radius: 12px;
@@ -159,7 +162,7 @@
 </nav>
 <script>
 "use strict";
-const APP_VER = "1.1.0";
+const APP_VER = "1.2.0";
 
 /* ===== データ（記録の追加はここを書き換えて再公開する） ===== */
 const DATA = {
@@ -200,27 +203,49 @@ const DATA = {
     { no: 4, date: "2026-11-18", dir: "行き", facility: "東千石", depart: "07:35", arrive: "08:23", minutes: 48, parking: "職員駐車場（無料）", fee: 0, memo: null },
     { no: 5, date: "2026-11-19", dir: "行き", facility: "上之園", depart: "07:42", arrive: "08:19", minutes: 37, parking: "テクノパーキング甲南ロイヤル第1", fee: 600, memo: "第2（500円）と取り違え" }
   ],
-  // 表示順＝おすすめ順。mapUrl があればそれを使い、無ければ「名称＋住所」で検索リンクを作る
+  // 表示順＝おすすめ順（2026-11-22 駐車場総調査）。distM/walkMin: 施設からの徒歩経路（職員駐車場は null）
+  // dayCost: 平日9時間(9:00〜18:00)の実額（円）／spaces: null は台数不明
+  // mapUrl があればそれを使い、無ければ「名称＋住所」で検索リンクを作る
   parking: {
     "東千石": [
-      { name: "職員駐車場", address: "照国町16-16", fee: "無料", note: "3台・先着順", staff: true, free: true, mapUrl: "https://www.google.com/maps/search/?api=1&query=31.59302,130.55271" },
-      { name: "テクノパーキング照国町第5", address: "照国町3", fee: "24時間最大500円", note: "60分100円" },
-      { name: "テクノパーキング照国ガレージ", address: "照国町9-21", fee: "24時間最大600円", note: "60分100円・8台" },
-      { name: "タイムズ照国町", address: "照国町10", fee: "24時間最大600円", note: "" },
-      { name: "南国照国パーキングDO24", address: "照国町12-8", fee: "2Fのみ 7:00–19:00 最大700円", note: "1Fは同時間帯1,200円なので2F必須" }
+      { name: "職員駐車場", addr: "照国町16-16", distM: null, walkMin: null, dayCost: 0, spaces: 3, fee: "無料（職員用・先着3台）", note: "", staff: true, mapUrl: "https://www.google.com/maps/search/?api=1&query=31.59302,130.55271" },
+      { name: "テクノパーキング照国町第5", addr: "照国町3", distM: 280, walkMin: 4, dayCost: 500, spaces: 6, fee: "80分100円・24時間最大500円・夜間(18-8時)最大200円", note: "" },
+      { name: "テクノパーキング照国町", addr: "照国町1-15", distM: 210, walkMin: 3, dayCost: 600, spaces: 6, fee: "8-20時60分100円・20-8時80分100円・12時間最大600円", note: "情報源により時間帯の単価に食い違いあり（9時間実額600円は一致）" },
+      { name: "南国照国パーキングDO24（2F）", addr: "照国町12-8", distM: 130, walkMin: 2, dayCost: 700, spaces: 180, fee: "2F：60分100円・7-19時最大700円（1Fは30分100円・最大1,200円）", note: "2Fが安い" },
+      { name: "セイワパーク照国3", addr: "照国町4-10", distM: 450, walkMin: 7, dayCost: 500, spaces: 6, fee: "90分100円・入庫12時間最大500円・夜間最大200円", note: "" },
+      { name: "テクノパーキング照国ガレージ", addr: "照国町9-21", distM: 400, walkMin: 6, dayCost: 600, spaces: 8, fee: "60分100円・24時間最大600円・夜間最大200円", note: "" },
+      { name: "タイムズ照国町", addr: "照国町10", distM: 400, walkMin: 6, dayCost: 700, spaces: 19, fee: "60分200円・駐車後24時間最大700円・夜間最大200円", note: "以前の最大600円から値上げ済み" },
+      { name: "テクノパーキング照国町第3", addr: "照国町6-13", distM: 500, walkMin: 7, dayCost: 500, spaces: 8, fee: "90分100円・12時間最大500円・夜間最大200円", note: "" },
+      { name: "タイムズ東千石第3", addr: "東千石町4-4", distM: 75, walkMin: 1, dayCost: 900, spaces: 33, fee: "9-17時30分200円・17-9時60分100円・駐車後24時間最大900円", note: "キャッシュレス専用（現金不可）" },
+      { name: "セイワパーク天文館", addr: "東千石町1-24", distM: 270, walkMin: 4, dayCost: 900, spaces: 175, fee: "60分100円・7-19時最大900円・19-7時最大900円", note: "" },
+      { name: "セイワパーク照国町", addr: "照国町19-20", distM: 400, walkMin: 6, dayCost: 800, spaces: 136, fee: "30分100円・入庫24時間最大800円", note: "" },
+      { name: "パラカ鹿児島市照国町第2", addr: "照国町14-22", distM: 69, walkMin: 1, dayCost: 1000, spaces: 9, fee: "20分100円・8-19時最大1,000円・19-8時最大600円", note: "住所表記に情報源間の食い違いあり" }
     ],
     "上之園": [
-      { name: "テクノパーキング甲南ロイヤル第2", address: "上之園町15-1", fee: "24時間最大500円", note: "60分100円" },
-      { name: "テクノパーキング甲南ロイヤル第1", address: "上之園町15-11", fee: "24時間最大600円", note: "60分100円／第2と隣同士・取り違え注意" },
-      { name: "トラストパーク上之園", address: "上之園町14-10", fee: "平日12時間最大600円・土日祝400円", note: "60分100円・5台" },
-      { name: "システムパーク上之園町", address: "上之園町14", fee: "8:00–20:00 上限600円", note: "60分100円・9台" }
+      { name: "テクノパーキング甲南ロイヤル第2", addr: "上之園町15-11", distM: 350, walkMin: 5, dayCost: 500, spaces: 7, fee: "60分100円・入庫後24時間最大500円", note: "" },
+      { name: "システムパーク上之園町", addr: "上之園町14", distM: 220, walkMin: 3, dayCost: 600, spaces: 9, fee: "60分100円・昼間(8-20時)上限600円・夜間上限500円", note: "" },
+      { name: "テクノパーキング甲南ロイヤル第1", addr: "上之園町15-11", distM: 350, walkMin: 5, dayCost: 600, spaces: 13, fee: "60分100円・入庫後24時間最大600円", note: "第2と隣接。間違えやすい" },
+      { name: "トラストパーク上之園", addr: "上之園町14-10", distM: 250, walkMin: 3, dayCost: 600, spaces: 5, fee: "60分100円・平日 入庫後12時間最大600円・土日祝400円・夜間最大300円", note: "集約サイトでは平日500円の表記もあり（公式は600円）" },
+      { name: "テクノパーキング高麗町第7", addr: "高麗町10-20", distM: 270, walkMin: 4, dayCost: 600, spaces: null, fee: "80分100円・24時間最大600円・夜間最大200円", note: "" },
+      { name: "タイムズ高麗町第6", addr: "高麗町26", distM: 270, walkMin: 4, dayCost: 600, spaces: 4, fee: "60分200円・昼間(7-19時)最大600円・夜間最大300円", note: "" },
+      { name: "三井のリパーク鹿児島上之園町第2", addr: "上之園町18-14", distM: 200, walkMin: 3, dayCost: 700, spaces: 16, fee: "60分220円・入庫後24時間最大 平日700円／土日祝600円", note: "台数は公式未確認" },
+      { name: "テクノパーキング上之園町第6", addr: "上之園町13-13", distM: 240, walkMin: 3, dayCost: 700, spaces: 14, fee: "60分100円・24時間最大700円・夜間最大400円", note: "" },
+      { name: "テクノパーキング甲南通り第3", addr: "中央町15-15", distM: 280, walkMin: 4, dayCost: 800, spaces: 29, fee: "60分100円・昼間12時間最大800円・夜間最大500円", note: "" },
+      { name: "テクノパーキング甲南通り第2", addr: "中央町15-17", distM: 350, walkMin: 5, dayCost: 800, spaces: 49, fee: "60分100円・昼間12時間最大800円・夜間最大500円", note: "" }
     ],
     "上荒田": [
-      { name: "上荒田Mパーキング", address: "上荒田町31-9", fee: "12時間最大500円", note: "60分100円・施設の隣（約40m）", unverified: true, source: "NAVITIME" },
-      { name: "テクノパーキング上荒田町第8", address: "上荒田町", fee: "24時間最大500円", note: "60分100円・施設から約80m", unverified: true, source: "NAVITIME" },
-      { name: "セイワパーク上荒田町", address: "上荒田町28-8", fee: "入庫から24時間最大500円", note: "60分100円・7台・現金のみ（運営公式で確認）" },
-      { name: "テクノパーキング上荒田町第6", address: "上荒田町16-14", fee: "24時間最大500円", note: "60分100円", unverified: true, source: "NAVITIME" },
-      { name: "タイムズ荒田第13", address: "荒田1-51", fee: "駐車後24時間最大600円", note: "60分100円・5台（運営公式で確認）" }
+      { name: "上荒田Mパーキング", addr: "上荒田町31-9", distM: 160, walkMin: 2, dayCost: 500, spaces: 18, fee: "60分100円・入庫後12時間最大500円", note: "" },
+      { name: "セイワパーク上荒田町", addr: "上荒田町28-8", distM: 230, walkMin: 3, dayCost: 500, spaces: 7, fee: "60分100円・入庫から24時間最大500円・夜間最大300円", note: "現金のみ" },
+      { name: "テクノパーキング上荒田町第8", addr: "上荒田町", distM: 210, walkMin: 3, dayCost: 500, spaces: null, fee: "60分100円・入庫後24時間最大500円・夜間最大200円", note: "公式一覧に掲載がなく集約サイトで確認" },
+      { name: "テクノパーキング上荒田町第6", addr: "上荒田町16-14", distM: 200, walkMin: 3, dayCost: 500, spaces: null, fee: "60分100円・入庫後24時間最大500円・夜間最大200円", note: "一部情報では最大700円の表記あり" },
+      { name: "タイムズ荒田第20", addr: "荒田1-33", distM: 350, walkMin: 5, dayCost: 500, spaces: 5, fee: "60分200円・駐車後24時間最大500円", note: "" },
+      { name: "三井のリパーク鹿児島荒田1丁目", addr: "荒田1-36-1", distM: 450, walkMin: 6, dayCost: 500, spaces: 6, fee: "60分220円・平日 入庫後24時間最大500円（土日祝600円）", note: "" },
+      { name: "アンナプルナI", addr: "上荒田町12-18", distM: 160, walkMin: 2, dayCost: 600, spaces: 6, fee: "60分100円・入庫後12時間最大600円", note: "" },
+      { name: "タイムズ荒田第13", addr: "荒田1-51", distM: 220, walkMin: 3, dayCost: 600, spaces: 5, fee: "60分100円・駐車後24時間最大600円", note: "" },
+      { name: "タイムズ荒田第22", addr: "荒田1-29", distM: 260, walkMin: 4, dayCost: 600, spaces: 40, fee: "40分200円・駐車後24時間最大600円・夜間最大400円", note: "" },
+      { name: "Dパーキング上荒田町第2", addr: "上荒田町16-5", distM: 280, walkMin: 4, dayCost: 600, spaces: 11, fee: "60分100円・24時間最大600円・夜間最大300円", note: "特Pのみで確認" },
+      { name: "タイムズ上荒田第2", addr: "上荒田町13-12", distM: 170, walkMin: 2, dayCost: 700, spaces: 7, fee: "60分200円・駐車後24時間最大700円・夜間最大300円", note: "" },
+      { name: "セイワパーク上荒田町3", addr: "上荒田町36-11", distM: 220, walkMin: 3, dayCost: 700, spaces: 11, fee: "60分100円・平日 入庫から12時間最大700円・土日祝400円・夜間最大200円", note: "24時間最大ではなく平日12時間最大" }
     ]
   },
   // ルート候補（表示順＝データ順）。predicted: Googleマップ渋滞予想の分レンジ／measured: 実測の分レンジ／km: null は距離不明
@@ -349,7 +374,23 @@ function navUrlFor(data, facility) {
 }
 function mapUrlFor(lot) {
   if (lot.mapUrl) return lot.mapUrl;
-  return MAP_BASE + encodeURIComponent(lot.name + " 鹿児島市" + lot.address);
+  return MAP_BASE + encodeURIComponent(lot.name + " 鹿児島市" + lot.addr);
+}
+/** 駐車場の並び替え（v1.2.0）。mode: "rec"＝おすすめ順（データ順）／"cheap"＝安い順／"near"＝近い順
+ *  職員駐車場（staff）はどの並びでも先頭に固定。null の距離は後ろ。最後はデータ順で安定させる */
+const PARK_SORTS = [["rec", "おすすめ順"], ["cheap", "安い順"], ["near", "近い順"]];
+function sortLots(lots, mode) {
+  const nl = (v) => (v === null || v === undefined ? Infinity : v);
+  const cmp = {
+    cheap: (a, b) => a.lot.dayCost - b.lot.dayCost || nl(a.lot.distM) - nl(b.lot.distM),
+    near: (a, b) => nl(a.lot.distM) - nl(b.lot.distM) || a.lot.dayCost - b.lot.dayCost
+  }[mode];
+  return lots.map((lot, i) => ({ lot, i })).sort((a, b) =>
+    (b.lot.staff ? 1 : 0) - (a.lot.staff ? 1 : 0) || (cmp ? cmp(a, b) : 0) || a.i - b.i
+  ).map((x) => x.lot);
+}
+function yen(n) {
+  return "¥" + n.toLocaleString("ja-JP");
 }
 function samplesNewestFirst(data) {
   return data.samples.slice().sort((a, b) => b.date.localeCompare(a.date) || toMin(b.depart) - toMin(a.depart) || b.no - a.no);
@@ -364,7 +405,7 @@ function formatFee(fee) {
   return fee.toLocaleString("ja-JP") + "円";
 }
 
-const CommuteCore = { APP_VER, DATA, toMin, fromMin, durationMin, todayTokyo, nowMinTokyo, weekdayOf, splitPlace, shiftOn, nextWorkShift, outboundStats, arrivalWindow, recommendedRoute, representativeRange, rangeBreakdown, arrivalFromNow, routeTimeText, routeKind, navUrlFor, mapUrlFor, samplesNewestFirst, formatFee };
+const CommuteCore = { APP_VER, DATA, toMin, fromMin, durationMin, todayTokyo, nowMinTokyo, weekdayOf, splitPlace, shiftOn, nextWorkShift, outboundStats, arrivalWindow, recommendedRoute, representativeRange, rangeBreakdown, arrivalFromNow, routeTimeText, routeKind, navUrlFor, mapUrlFor, samplesNewestFirst, formatFee, sortLots, PARK_SORTS, yen };
 globalThis.CommuteCore = CommuteCore;
 
 /* ===== 描画（テキストは textContent のみで入れる） ===== */
@@ -382,24 +423,55 @@ function el(tag, attrs, children) {
   return n;
 }
 
+/** 駐車場の並び順（全体で1つ。行き先を切り替えても保持する） */
+const parkState = { sort: "rec" };
+
 function parkingCards(facility) {
-  const lots = DATA.parking[facility] || [];
+  const lots = sortLots(DATA.parking[facility] || [], parkState.sort);
   if (!lots.length) {
     return [el("div", { class: "card" }, [el("div", { class: "empty", text: "駐車場は未調査" })])];
   }
-  return lots.map((lot, i) => el("div", { class: "card park-card" }, [
-    el("div", { class: "park-name" }, [
-      (i + 1) + ". " + lot.name,
-      lot.free ? el("span", { class: "pill free", text: "無料" }) : null,
-      lot.staff ? el("span", { class: "pill", text: "職員用" }) : null,
-      lot.unverified ? el("span", { class: "pill warn", text: "現地未確認" }) : null
-    ]),
-    el("div", { class: "park-row" }, [el("span", { class: "k", text: "住所" }), lot.address]),
-    el("div", { class: "park-row park-fee" }, [el("span", { class: "k", text: "上限" }), lot.fee]),
-    lot.note ? el("div", { class: "park-row" }, [el("span", { class: "k", text: "備考" }), lot.note]) : null,
-    lot.unverified ? el("div", { class: "park-row" }, [el("span", { class: "k", text: "情報源" }), (lot.source || "集約サイト") + "の情報（現地未確認・看板が正）"]) : null,
-    el("a", { class: "btn", href: mapUrlFor(lot), target: "_blank", rel: "noopener noreferrer" }, ["Googleマップで開く"])
-  ]));
+  return lots.map((lot, i) => {
+    const facts = [];
+    if (lot.walkMin !== null && lot.walkMin !== undefined && lot.distM !== null && lot.distM !== undefined) facts.push("徒歩" + lot.walkMin + "分・" + lot.distM + "m");
+    if (lot.spaces !== null && lot.spaces !== undefined) facts.push(lot.spaces + "台");
+    return el("div", { class: "card park-card" }, [
+      el("div", { class: "park-name" }, [
+        (i + 1) + ". " + lot.name,
+        lot.staff && lot.dayCost === 0 ? el("span", { class: "pill free", text: "無料" }) : null,
+        lot.staff ? el("span", { class: "pill", text: "職員用" }) : null
+      ]),
+      el("div", { class: "park-cost" }, ["9時間 " + yen(lot.dayCost)]),
+      facts.length ? el("div", { class: "park-facts", text: facts.join("　") }) : null,
+      el("div", { class: "park-row" }, [el("span", { class: "k", text: "料金" }), lot.fee]),
+      el("div", { class: "park-row" }, [el("span", { class: "k", text: "住所" }), lot.addr]),
+      lot.note ? el("div", { class: "park-note", text: "※" + lot.note }) : null,
+      el("a", { class: "btn", href: mapUrlFor(lot), target: "_blank", rel: "noopener noreferrer" }, ["Googleマップで開く"])
+    ]);
+  });
+}
+
+/** 駐車場セクション（並び替えチップ＋カード＋複合日の折りたたみ）。並びを変えたらこの中だけ描き直す */
+function parkingSection(selected, others) {
+  const box = el("div", { class: "park-section" });
+  function draw() {
+    const openOthers = Array.from(box.children || []).filter((n) => n.tag === "details" || n.tagName === "DETAILS").map((d) => !!d.open);
+    box.replaceChildren();
+    box.appendChild(el("div", { class: "chips sort-chips", role: "group", "aria-label": "駐車場の並び順" }, PARK_SORTS.map(([k, label]) => {
+      const b = el("button", { type: "button", class: "sort-chip", "aria-pressed": String(k === parkState.sort), "data-sort": k, text: label });
+      b.addEventListener("click", () => { parkState.sort = k; draw(); });
+      return b;
+    })));
+    for (const n of parkingCards(selected)) box.appendChild(n);
+    others.forEach((other, i) => {
+      const d = el("details", { class: "more" }, [el("summary", { text: "▸ " + other + "（同日のもう一方）の駐車場も見る" })].concat(parkingCards(other)));
+      if (openOthers[i]) d.open = true;
+      box.appendChild(d);
+    });
+    box.appendChild(el("div", { class: "fine", text: "※9時間＝平日 9:00〜18:00 の実額（2026-11-22 調査）。料金は現地の看板が正です。" }));
+  }
+  draw();
+  return box;
 }
 
 /** 主カード「今出発すると、到着は HH:MM〜HH:MM頃」 */
@@ -491,16 +563,14 @@ function renderToday(view, ymd, nowMin, selected) {
   }
   // 休みの日は「今出発すると」カードを出さない
   if (working) view.appendChild(nowCard(selected, nowMin));
+  // v1.1.1: 駐車場リストをルート候補より上に表示する（中身・挙動は変更なし）
+  view.appendChild(el("h2", { text: selected + "の駐車場" }));
+  // 複合日は、その日の他の施設の駐車場を折りたたみで併記（v1.0.0 から継続）
+  // v1.2.0: 見出しの下に並び替えチップ（おすすめ順／安い順／近い順）
+  const others = working && places.includes(selected) ? places.filter((p) => p !== selected) : [];
+  view.appendChild(parkingSection(selected, others));
   view.appendChild(el("h2", { text: selected + "へのルート候補" }));
   for (const n of routeCards(selected)) view.appendChild(n);
-  view.appendChild(el("h2", { text: selected + "の駐車場" }));
-  for (const n of parkingCards(selected)) view.appendChild(n);
-  // 複合日は、その日の他の施設の駐車場を折りたたみで併記（v1.0.0 から継続）
-  if (working && places.includes(selected)) {
-    for (const other of places.filter((p) => p !== selected)) {
-      view.appendChild(el("details", { class: "more" }, [el("summary", { text: "▸ " + other + "（同日のもう一方）の駐車場も見る" })].concat(parkingCards(other))));
-    }
-  }
 }
 
 function renderSamples(view) {
