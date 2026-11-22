@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
@@ -10,159 +10,214 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="通勤">
-<meta name="theme-color" content="#1f4e79">
+<meta name="theme-color" content="#ffffff">
 <title>通勤ダッシュボード</title>
 <style>
+  /* v1.4.0: セラーと同じ見た目（白カード・細罫線・赤アクセント） */
   :root {
-    --bg: #f3f5f8;
-    --card: #ffffff;
-    --text: #1b1f24;
-    --muted: #5f6b7a;
-    --line: #dde3ea;
-    --accent: #1f4e79;
-    --accent-soft: #e6eef7;
-    --free: #1b7f3b;
-    --free-soft: #e3f4e8;
-    --warn: #9a5b00;
-    --warn-soft: #fff3df;
-    --tabbar-h: 64px;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #12161b; --card: #1c222a; --text: #e9edf2; --muted: #9aa6b4; --line: #2c343e;
-      --accent: #7fb2e5; --accent-soft: #1f2d3c; --free: #6fd08f; --free-soft: #17301f;
-      --warn: #f0b860; --warn-soft: #33270f;
-    }
+    --bg: #f4f4f4;
+    --card: #fff;
+    --ink: #141414;
+    --line: #dedede;
+    --mute: #8a8a8a;
+    --red: #e60012;
+    --soft: #f0f0f0;
+    --tabbar-h: 60px;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
+  /* v1.3.0: ダブルタップ拡大の無効化 */
+  html, body, button, a, summary { touch-action: manipulation; }
   body {
-    background: var(--bg); color: var(--text);
+    background: var(--bg); color: var(--ink);
     font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
-    font-size: 17px; line-height: 1.5;
+    font-size: 15px; line-height: 1.5;
     -webkit-text-size-adjust: 100%;
     overflow-wrap: anywhere; word-break: normal;
   }
   header.appbar {
     position: sticky; top: 0; z-index: 5;
-    background: var(--accent); color: #fff;
-    padding: calc(env(safe-area-inset-top) + 10px) 16px 10px;
-    font-weight: 700; font-size: 18px;
+    background: var(--card); color: var(--ink); border-bottom: 1px solid var(--line);
+    padding: calc(env(safe-area-inset-top) + 12px) 16px 12px;
+    display: flex; align-items: baseline; gap: 8px;
   }
-  @media (prefers-color-scheme: dark) { header.appbar { color: #0e1620; } }
+  header.appbar .ttl { font-weight: 700; font-size: 17px; }
+  header.appbar .sep { color: var(--line); }
+  header.appbar .tabname { color: var(--mute); font-size: 14px; }
   main {
     max-width: 640px; margin: 0 auto;
-    padding: 14px 14px calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 20px);
+    padding: 12px 12px calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 36px);
   }
   section.view[hidden] { display: none; }
   .card {
-    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
-    padding: 14px 16px; margin-bottom: 12px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 12px 14px; margin-bottom: 10px;
   }
-  .date-big { font-size: 30px; font-weight: 800; line-height: 1.2; }
-  .date-sub { color: var(--muted); font-size: 15px; }
-  .label { color: var(--muted); font-size: 14px; font-weight: 600; }
-  .facility { font-size: 28px; font-weight: 800; line-height: 1.25; margin-top: 2px; }
-  .off { font-size: 26px; font-weight: 800; }
+  .date-big { font-size: 20px; font-weight: 700; line-height: 1.3; }
+  .date-sub { color: var(--mute); font-size: 13px; }
+  .label { color: var(--mute); font-size: 13px; }
+  .facility { font-size: 20px; font-weight: 700; line-height: 1.3; margin-top: 2px; }
+  .off { font-size: 20px; font-weight: 700; }
   .pill {
-    display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 14px; font-weight: 700;
-    background: var(--accent-soft); color: var(--accent); margin-top: 6px;
+    display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 12px; font-weight: 600;
+    background: var(--soft); color: var(--ink); margin-top: 6px;
   }
-  .pill.free { background: var(--free-soft); color: var(--free); }
-  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .park-name .pill { margin-top: 0; }
   .grid3 { display: grid; grid-template-columns: 1fr; gap: 10px; }
   .metric { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); }
   .metric:last-child { border-bottom: none; }
-  .metric .v { font-size: 22px; font-weight: 800; text-align: right; }
-  .metric .v small { font-size: 14px; font-weight: 600; color: var(--muted); }
-  h2 { font-size: 18px; margin: 18px 4px 8px; }
-  .park-name { font-size: 18px; font-weight: 800; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-  .park-row { font-size: 15px; margin-top: 4px; }
-  .park-row .k { color: var(--muted); display: inline-block; min-width: 3.5em; }
-  .park-cost { font-size: 22px; font-weight: 800; margin-top: 4px; }
-  .park-facts { font-size: 15px; font-weight: 700; margin-top: 2px; }
-  .park-note { font-size: 13px; color: var(--muted); margin-top: 4px; }
-  .sort-chips button { font-size: 15px; min-height: 44px; }
+  .metric .v { font-size: 20px; font-weight: 700; text-align: right; }
+  .metric .v small { font-size: 13px; font-weight: 400; color: var(--mute); }
+  h2 { font-size: 15px; font-weight: 700; margin: 18px 4px 8px; }
+  .park-name { font-size: 15px; font-weight: 700; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .park-row { font-size: 14px; margin-top: 4px; }
+  .park-row .k { color: var(--mute); display: inline-block; min-width: 3.5em; }
+  .park-cost { font-size: 18px; font-weight: 700; margin-top: 4px; }
+  .park-facts { font-size: 14px; margin-top: 2px; }
+  .park-note { font-size: 12px; color: var(--mute); margin-top: 4px; }
   a.btn {
     display: flex; align-items: center; justify-content: center;
-    min-height: 48px; margin-top: 10px; border-radius: 12px;
-    background: var(--accent); color: #fff; text-decoration: none; font-weight: 700; font-size: 16px;
+    min-height: 44px; margin-top: 10px; border-radius: 10px;
+    background: var(--card); color: var(--ink); border: 1px solid var(--line);
+    text-decoration: none; font-weight: 600; font-size: 14px;
   }
-  @media (prefers-color-scheme: dark) { a.btn { color: #0e1620; } }
   details.more { margin-top: 4px; }
   details.more > summary {
-    cursor: pointer; min-height: 48px; display: flex; align-items: center; padding: 0 14px;
-    background: var(--card); border: 1px solid var(--line); border-radius: 12px; font-weight: 700;
+    cursor: pointer; min-height: 44px; display: flex; align-items: center; padding: 0 14px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px; font-weight: 600; font-size: 14px;
     list-style: none;
   }
   details.more > summary::-webkit-details-marker { display: none; }
-  details.more[open] > summary { margin-bottom: 12px; }
-  .empty { color: var(--muted); font-weight: 700; }
+  details.more[open] > summary { margin-bottom: 10px; }
+  .empty { color: var(--mute); font-weight: 600; }
   table { width: 100%; border-collapse: collapse; }
-  .stats td, .stats th { padding: 8px 4px; text-align: right; border-bottom: 1px solid var(--line); font-size: 15px; }
+  .stats td, .stats th { padding: 7px 4px; text-align: right; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .stats tr:last-child td { border-bottom: none; }
   .stats th:first-child, .stats td:first-child { text-align: left; }
-  .stats th { color: var(--muted); font-weight: 600; font-size: 13px; }
-  .sample-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
-  .sample-head .d { font-weight: 800; font-size: 17px; }
-  .dir { font-size: 13px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
-  .dir.back { background: var(--warn-soft); color: var(--warn); }
-  .sample-time { font-size: 20px; font-weight: 800; margin-top: 4px; }
-  .sample-time small { font-size: 15px; color: var(--muted); font-weight: 600; }
-  .shift-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); min-height: 52px; }
+  .stats th { color: var(--mute); font-weight: 400; font-size: 12px; }
+  .sample-head { display: flex; justify-content: space-between; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .sample-head .d { font-weight: 700; font-size: 15px; }
+  .sample-head .tags { display: flex; align-items: center; gap: 6px; }
+  .dir { font-size: 12px; font-weight: 600; padding: 1px 9px; border-radius: 999px; background: var(--soft); color: var(--ink); }
+  .dir.back { color: var(--mute); }
+  .sample-time { font-size: 17px; font-weight: 700; margin-top: 4px; }
+  .sample-time small { font-size: 13px; color: var(--mute); font-weight: 400; }
+  .shift-row { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-bottom: 1px solid var(--line); min-height: 48px; }
   .shift-row:last-child { border-bottom: none; }
-  .shift-row .sd { width: 5.2em; flex: none; font-weight: 700; }
-  .shift-row .sw { width: 1.6em; flex: none; color: var(--muted); }
-  .shift-row .sw.sun { color: #c0392b; } .shift-row .sw.sat { color: #2471a3; }
-  .shift-row .sp { flex: 1; min-width: 0; font-weight: 700; }
-  .shift-row .sp.off { color: var(--muted); font-weight: 600; font-size: 17px; }
-  .shift-row.today { background: var(--accent-soft); border-left: 5px solid var(--accent); }
-  .shift-row.today .sd::after { content: "今日"; margin-left: 4px; font-size: 11px; background: var(--accent); color: #fff; padding: 1px 5px; border-radius: 6px; vertical-align: 2px; }
+  .shift-row .sd { width: 5.2em; flex: none; font-weight: 600; }
+  .shift-row .sw { width: 1.6em; flex: none; color: var(--mute); }
+  .shift-row .sw.sun { color: var(--red); } .shift-row .sw.sat { color: #2471a3; }
+  .shift-row .sp { flex: 1; min-width: 0; font-weight: 600; }
+  .shift-row .sp.off { color: var(--mute); font-weight: 400; }
+  .shift-row.today { box-shadow: inset 3px 0 0 var(--red); }
+  .shift-row.today .sd::after { content: "今日"; margin-left: 4px; font-size: 11px; color: var(--red); border: 1px solid var(--red); padding: 0 5px; border-radius: 999px; vertical-align: 1px; }
   .shift-list { padding: 0; overflow: hidden; }
-  .chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 4px 0 12px; }
-  .chips button {
-    appearance: none; font-family: inherit; font-size: 17px; font-weight: 800; min-height: 48px;
-    border-radius: 999px; border: 2px solid var(--line); background: var(--card); color: var(--text);
+  /* v1.3.0: シフトの行はタップで編集 */
+  button.shift-row {
+    width: 100%; appearance: none; -webkit-appearance: none; border: none; border-bottom: 1px solid var(--line); background: none;
+    color: inherit; font: inherit; text-align: left; cursor: pointer;
   }
-  .chips button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: #fff; }
-  @media (prefers-color-scheme: dark) { .chips button[aria-pressed="true"] { color: #0e1620; } }
-  .now-arrive { font-size: 34px; font-weight: 800; line-height: 1.2; margin-top: 2px; }
-  .now-sub { color: var(--muted); font-size: 14px; margin-top: 6px; }
-  .route-name { font-size: 17px; font-weight: 800; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-  .route-time { font-size: 20px; font-weight: 800; margin-top: 4px; }
-  .route-time small { font-size: 14px; color: var(--muted); font-weight: 600; }
-  .fine { color: var(--muted); font-size: 13px; margin: 4px 4px 12px; }
-  footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 20px; }
-  nav.tabbar {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+  button.shift-row:active { background: var(--soft); }
+  .shift-row.editing { outline: 1px solid var(--red); outline-offset: -1px; }
+  .month-nav { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; margin: 6px 0 4px; }
+  .month-nav h2 { margin: 0; text-align: center; font-size: 20px; }
+  .month-nav button, .sheet-actions button, .reset-btn, .rec-del {
+    appearance: none; -webkit-appearance: none; font-family: inherit; font-size: 14px; font-weight: 600; min-height: 44px; padding: 0 14px;
+    border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  }
+  .reset-btn { width: 100%; margin-top: 8px; color: var(--red); }
+  .sheet-backdrop { position: fixed; inset: 0; z-index: 20; background: rgba(0, 0, 0, .3); }
+  .sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 21;
+    max-width: 640px; margin: 0 auto; background: var(--card); border-top: 1px solid var(--line);
+    border-radius: 16px 16px 0 0; padding: 16px 16px calc(env(safe-area-inset-bottom) + 14px);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, .08);
+  }
+  .sheet-title { font-size: 20px; font-weight: 700; }
+  .sheet-now { color: var(--mute); font-size: 13px; margin: 2px 0 10px; }
+  .chips button .ord { font-size: 12px; margin-left: 4px; }
+  .chips button:disabled { opacity: .4; }
+  .sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .sheet .fine { margin: 10px 0 0; text-align: center; }
+  .chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 4px 0 12px; }
+  .chips.two { grid-template-columns: repeat(2, 1fr); }
+  .chips button {
+    appearance: none; -webkit-appearance: none; font-family: inherit; font-size: 14px; font-weight: 600; min-height: 44px;
+    border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  }
+  .chips button[aria-pressed="true"] { border-color: var(--red); color: var(--red); }
+  .now-arrive { font-size: 24px; font-weight: 700; line-height: 1.3; margin-top: 2px; }
+  .now-sub { color: var(--mute); font-size: 13px; margin-top: 6px; }
+  .route-name { font-size: 15px; font-weight: 700; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .route-name .pill { margin-top: 0; }
+  .route-time { font-size: 16px; font-weight: 700; margin-top: 4px; }
+  .route-time small { font-size: 13px; color: var(--mute); font-weight: 400; }
+  .fine { color: var(--mute); font-size: 12px; margin: 4px 4px 12px; }
+  /* v1.4.0: 明日のプレビュー */
+  .tomorrow-card { margin-top: 18px; }
+  .tomorrow-main { font-size: 15px; font-weight: 700; margin-top: 2px; }
+  .tomorrow-sub { font-size: 13px; color: var(--mute); margin-top: 2px; }
+  /* v1.4.0: 今月の駐車場代・記録フォーム */
+  .total-amount { font-size: 24px; font-weight: 700; line-height: 1.3; margin-top: 2px; }
+  .total-sub { font-size: 13px; color: var(--mute); }
+  .total-sub .warn { color: var(--red); margin-left: 8px; }
+  .rec-form .field { margin-top: 10px; }
+  .rec-form .field:first-child { margin-top: 0; }
+  .rec-form .chips { margin: 4px 0 0; }
+  .rec-form .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .rec-form input, .rec-form select {
+    display: block; width: 100%; min-height: 44px; margin-top: 4px; padding: 0 10px;
+    font-family: inherit; font-size: 16px; color: var(--ink);
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    appearance: none; -webkit-appearance: none;
+  }
+  .rec-form select { appearance: auto; -webkit-appearance: menulist; }
+  .rec-save {
+    appearance: none; -webkit-appearance: none; width: 100%; min-height: 46px; margin-top: 14px;
+    border: none; border-radius: 10px; background: var(--red); color: #fff;
+    font-family: inherit; font-size: 15px; font-weight: 700;
+  }
+  .form-msg { font-size: 13px; color: var(--red); margin-top: 8px; }
+  .form-msg:empty { display: none; }
+  .form-msg.ok { color: var(--mute); }
+  .rec-del { min-height: 32px; padding: 0 10px; font-size: 12px; color: var(--red); }
+  footer { text-align: center; color: var(--mute); font-size: 12px; margin-top: 20px; }
+  /* v1.4.0: 下部に浮くピル型タブバー */
+  nav.tabbar.tabbar-pill {
+    position: fixed; z-index: 10;
+    left: 0; right: 0; margin: 0 auto;
+    bottom: calc(env(safe-area-inset-bottom) + 10px);
+    width: calc(100% - 32px); max-width: 420px; height: var(--tabbar-h);
     display: grid; grid-template-columns: repeat(3, 1fr);
-    background: var(--card); border-top: 1px solid var(--line);
-    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .08);
+    overflow: hidden;
   }
   nav.tabbar button {
-    appearance: none; border: none; background: none; color: var(--muted);
-    min-height: var(--tabbar-h); font-size: 16px; font-weight: 700; font-family: inherit;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    appearance: none; -webkit-appearance: none; border: none; background: none; color: var(--mute);
+    font-size: 11px; font-weight: 600; font-family: inherit;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
   }
-  nav.tabbar button .ic { font-size: 20px; line-height: 1; }
-  nav.tabbar button[aria-selected="true"] { color: var(--accent); box-shadow: inset 0 3px 0 var(--accent); }
+  nav.tabbar button svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  nav.tabbar button.is-active { color: var(--red); }
 </style>
 </head>
 <body>
-<header class="appbar">通勤ダッシュボード <span style="font-weight:500;font-size:14px;opacity:.85">清和から</span></header>
+<header class="appbar"><span class="ttl">通勤ダッシュボード</span><span class="sep">｜</span><span class="tabname" id="tab-name">今日</span></header>
 <main>
   <section class="view" id="view-today" aria-label="今日"></section>
   <section class="view" id="view-samples" aria-label="記録" hidden></section>
   <section class="view" id="view-shift" aria-label="シフト" hidden></section>
   <footer>通勤ダッシュボード v<span id="app-ver"></span></footer>
 </main>
-<nav class="tabbar" role="tablist">
-  <button type="button" role="tab" data-tab="today" aria-selected="true"><span class="ic">☀︎</span>今日</button>
-  <button type="button" role="tab" data-tab="samples" aria-selected="false"><span class="ic">⏱</span>記録</button>
-  <button type="button" role="tab" data-tab="shift" aria-selected="false"><span class="ic">▦</span>シフト</button>
+<nav class="tabbar tabbar-pill" role="tablist">
+  <button type="button" role="tab" class="is-active" data-tab="today" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/></svg><span class="lb">今日</span></button>
+  <button type="button" role="tab" data-tab="samples" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h9l3.5 3.5v13.5H6z"/><path d="M14.5 3.5V7.5h4"/><path d="M9 12h6"/><path d="M9 16h6"/></svg><span class="lb">記録</span></button>
+  <button type="button" role="tab" data-tab="shift" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17"/><path d="M8 3v4"/><path d="M16 3v4"/></svg><span class="lb">シフト</span></button>
 </nav>
 <script>
 "use strict";
-const APP_VER = "1.2.1";
+const APP_VER = "1.4.0";
 
 /* ===== データ（記録の追加はここを書き換えて再公開する） ===== */
 const DATA = {
@@ -177,24 +232,7 @@ const DATA = {
     "上之園": { address: "鹿児島市上之園町4-15" },
     "上荒田": { address: "鹿児島市上荒田町31-12" }
   },
-  // place: 施設名（複合日は「・」区切り、先頭が朝の行き先）／ null は休み
-  shifts: [
-    { date: "2026-11-16", place: "東千石" },
-    { date: "2026-11-17", place: "東千石・上之園" },
-    { date: "2026-11-18", place: "東千石" },
-    { date: "2026-11-19", place: "上之園" },
-    { date: "2026-11-20", place: null },
-    { date: "2026-11-21", place: null },
-    { date: "2026-11-22", place: null },
-    { date: "2026-11-23", place: "東千石・上之園" },
-    { date: "2026-11-24", place: "上荒田" },
-    { date: "2026-11-25", place: "東千石" },
-    { date: "2026-11-26", place: "東千石" },
-    { date: "2026-11-27", place: "上之園・上荒田" },
-    { date: "2026-11-28", place: null },
-    { date: "2026-11-29", place: null },
-    { date: "2026-11-30", place: "東千石・上之園" }
-  ],
+  // v1.3.0: シフトは DATA の外の DEFAULT_SHIFTS（初期値）＋端末内保存へ移動
   // fee: 駐車代（円）。null は未確定。memo: null はメモなし
   samples: [
     { no: 1, date: "2026-11-16", dir: "行き", facility: "東千石", depart: "07:30", arrive: "08:18", minutes: 48, parking: "コインパーク鹿児島", fee: null, memo: "昼間は上限なし" },
@@ -268,6 +306,177 @@ const DATA = {
   }
 };
 
+/* ===== シフト（v1.3.0: 日付キー → 拠点IDの配列（勤務順）。空配列＝休み／キーが無い日＝未登録） ===== */
+const PLACE_IDS = { higashi: "東千石", kamino: "上之園", arata: "上荒田" };
+const SHIFT_KEY = "commute.shifts.v1";
+const MAX_PLACES = 2;
+const DEFAULT_SHIFTS = {
+  "2026-11-16": ["higashi"],
+  "2026-11-17": ["higashi", "kamino"],
+  "2026-11-18": ["higashi"],
+  "2026-11-19": ["kamino"],
+  "2026-11-20": [],
+  "2026-11-21": [],
+  "2026-11-22": [],
+  "2026-11-23": ["higashi", "kamino"],
+  "2026-11-24": ["arata"],
+  "2026-11-25": ["higashi"],
+  "2026-11-26": ["higashi"],
+  "2026-11-27": ["kamino", "arata"],
+  "2026-11-28": [],
+  "2026-11-29": [],
+  "2026-11-30": ["higashi", "kamino"]
+};
+
+function cloneShifts(m) {
+  const o = {};
+  for (const k of Object.keys(m)) o[k] = m[k].slice();
+  return o;
+}
+/** 保存値の検証。形が壊れていれば null（未知の拠点IDは捨て、重複を除き、最大2つ） */
+function cleanShifts(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const o = {};
+  for (const k of Object.keys(raw)) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(k) || !Array.isArray(raw[k])) continue;
+    const ids = [];
+    for (const id of raw[k]) if (Object.prototype.hasOwnProperty.call(PLACE_IDS, id) && !ids.includes(id)) ids.push(id);
+    o[k] = ids.slice(0, MAX_PLACES);
+  }
+  return o;
+}
+/** localStorage（使えない環境では null。アクセス自体が例外になる環境もある） */
+function getStorage() {
+  try { return globalThis.localStorage || null; } catch (e) { return null; }
+}
+/** 保存値があればそれを、無ければ（壊れていれば）DEFAULT_SHIFTS の複製 */
+function loadShifts(storage) {
+  if (storage) {
+    try {
+      const v = storage.getItem(SHIFT_KEY);
+      if (v) { const c = cleanShifts(JSON.parse(v)); if (c) return c; }
+    } catch (e) { /* 読めなければ初期値 */ }
+  }
+  return cloneShifts(DEFAULT_SHIFTS);
+}
+function saveShifts(storage, shifts) {
+  if (!storage) return false;
+  try { storage.setItem(SHIFT_KEY, JSON.stringify(shifts)); return true; } catch (e) { return false; }
+}
+function clearShifts(storage) {
+  if (!storage) return;
+  try { storage.removeItem(SHIFT_KEY); } catch (e) { /* メモリ上だけ戻す */ }
+}
+/** チップのトグル：選択済みなら外す／未選択なら末尾に足す（最大2つ。3つ目は無視） */
+function toggleShiftPlace(ids, id) {
+  if (ids.includes(id)) return ids.filter((x) => x !== id);
+  if (ids.length >= MAX_PLACES) return ids.slice();
+  return ids.concat([id]);
+}
+function placeNames(ids) {
+  return (ids || []).map((id) => PLACE_IDS[id]).filter(Boolean);
+}
+/** 表示用の勤務内容 "東千石 → 上之園" ／ "休み" */
+function shiftLabel(ids) {
+  const n = placeNames(ids);
+  return n.length ? n.join(" → ") : "休み";
+}
+function daysInMonth(ym) {
+  const [y, m] = ym.split("-").map(Number);
+  return new Date(Date.UTC(y, m, 0)).getUTCDate();
+}
+function addMonth(ym, delta) {
+  const [y, m] = ym.split("-").map(Number);
+  const t = new Date(Date.UTC(y, m - 1 + delta, 1));
+  return t.getUTCFullYear() + "-" + String(t.getUTCMonth() + 1).padStart(2, "0");
+}
+function monthDates(ym) {
+  const out = [];
+  for (let d = 1; d <= daysInMonth(ym); d++) out.push(ym + "-" + String(d).padStart(2, "0"));
+  return out;
+}
+
+/** 現在のシフト（初回アクセス時に保存値を読む）。編集は setShift / resetShifts 経由で即保存 */
+const shiftStore = { storage: undefined, data: null, onChange: null };
+function currentShifts() {
+  if (!shiftStore.data) {
+    shiftStore.storage = getStorage();
+    shiftStore.data = loadShifts(shiftStore.storage);
+  }
+  return shiftStore.data;
+}
+function setShift(ymd, ids) {
+  currentShifts()[ymd] = ids.slice();
+  saveShifts(shiftStore.storage, shiftStore.data);
+  if (shiftStore.onChange) shiftStore.onChange();
+}
+function resetShifts() {
+  currentShifts();
+  clearShifts(shiftStore.storage);
+  shiftStore.data = cloneShifts(DEFAULT_SHIFTS);
+  if (shiftStore.onChange) shiftStore.onChange();
+}
+
+/* ===== 記録（v1.4.0: ページ内入力。localStorage に配列で保存。初期サンプル DATA.samples は別扱い・削除不可） ===== */
+const RECORD_KEY = "commute.records.v1";
+const DIR_LABEL = { out: "行き", back: "帰り" };
+const HHMM_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+/** 1件の検証。必須は id・日付・区分・行き先。時刻・駐車場・料金は空欄可（null） */
+function cleanRecord(r) {
+  if (!r || typeof r !== "object") return null;
+  if (typeof r.id !== "string" || !r.id) return null;
+  if (typeof r.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(r.date)) return null;
+  if (!Object.prototype.hasOwnProperty.call(DIR_LABEL, r.dir)) return null;
+  if (!Object.prototype.hasOwnProperty.call(PLACE_IDS, r.fac)) return null;
+  const t = (v) => (typeof v === "string" && HHMM_RE.test(v) ? v : null);
+  const lot = typeof r.lot === "string" && r.lot.trim() ? r.lot.trim().slice(0, 80) : null;
+  const fee = typeof r.fee === "number" && Number.isFinite(r.fee) && r.fee >= 0 ? Math.round(r.fee) : null;
+  return { id: r.id, date: r.date, dir: r.dir, fac: r.fac, dep: t(r.dep), arr: t(r.arr), lot, fee };
+}
+function cleanRecords(raw) {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set();
+  const out = [];
+  for (const r of raw) {
+    const c = cleanRecord(r);
+    if (c && !seen.has(c.id)) { seen.add(c.id); out.push(c); }
+  }
+  return out;
+}
+function loadRecords(storage) {
+  if (!storage) return [];
+  try { const v = storage.getItem(RECORD_KEY); return v ? cleanRecords(JSON.parse(v)) : []; } catch (e) { return []; }
+}
+function saveRecords(storage, recs) {
+  if (!storage) return false;
+  try { storage.setItem(RECORD_KEY, JSON.stringify(recs)); return true; } catch (e) { return false; }
+}
+function newRecordId() {
+  return "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+const recordStore = { storage: undefined, data: null };
+function currentRecords() {
+  if (!recordStore.data) {
+    recordStore.storage = getStorage();
+    recordStore.data = loadRecords(recordStore.storage);
+  }
+  return recordStore.data;
+}
+/** 追加（検証を通らなければ null）。保存は即時 */
+function addRecord(rec) {
+  const c = cleanRecord(Object.assign({ id: newRecordId() }, rec));
+  if (!c) return null;
+  currentRecords().push(c);
+  saveRecords(recordStore.storage, recordStore.data);
+  return c;
+}
+function deleteRecord(id) {
+  const before = currentRecords().length;
+  recordStore.data = recordStore.data.filter((r) => r.id !== id);
+  if (recordStore.data.length !== before) saveRecords(recordStore.storage, recordStore.data);
+  return recordStore.data.length !== before;
+}
+
 /* ===== 計算（DOM を使わない純粋関数。tests/test_data.js からも呼ぶ） ===== */
 const WEEK = ["日", "月", "火", "水", "木", "金", "土"];
 const MAP_BASE = "https://www.google.com/maps/search/?api=1&query=";
@@ -304,11 +513,15 @@ function weekdayIndex(ymd) {
 function splitPlace(place) {
   return place ? place.split("・").map((s) => s.trim()).filter(Boolean) : [];
 }
-function shiftOn(data, ymd) {
-  return data.shifts.find((s) => s.date === ymd) || null;
+/** その日のシフト { date, place }（place は「・」区切りの施設名、休みは null）。未登録の日は null */
+function shiftOn(shifts, ymd) {
+  if (!Object.prototype.hasOwnProperty.call(shifts, ymd)) return null;
+  const n = placeNames(shifts[ymd]);
+  return { date: ymd, place: n.length ? n.join("・") : null };
 }
-function nextWorkShift(data, ymd) {
-  return data.shifts.filter((s) => s.date > ymd && s.place).sort((a, b) => a.date.localeCompare(b.date))[0] || null;
+function nextWorkShift(shifts, ymd) {
+  const d = Object.keys(shifts).filter((k) => k > ymd && placeNames(shifts[k]).length).sort()[0];
+  return d ? shiftOn(shifts, d) : null;
 }
 /** 施設への「行き」集計。0件なら count:0 と null */
 function outboundStats(data, facility) {
@@ -397,6 +610,44 @@ function yen(n) {
 function samplesNewestFirst(data) {
   return data.samples.slice().sort((a, b) => b.date.localeCompare(a.date) || toMin(b.depart) - toMin(a.depart) || b.no - a.no);
 }
+/** v1.4.0: 初期サンプルとユーザー入力を同じ形にそろえて新しい順に並べる（user: true が削除可能な入力分） */
+function mergedRecords(data, userRecs) {
+  const rows = data.samples.map((s) => ({
+    key: "s" + s.no, user: false, date: s.date, dir: s.dir, facility: s.facility,
+    depart: s.depart, arrive: s.arrive, minutes: s.minutes, parking: s.parking, fee: s.fee, memo: s.memo, ord: s.no
+  })).concat((userRecs || []).map((r, i) => ({
+    key: r.id, id: r.id, user: true, date: r.date, dir: DIR_LABEL[r.dir], facility: PLACE_IDS[r.fac],
+    depart: r.dep, arrive: r.arr, minutes: r.dep && r.arr ? durationMin(r.dep, r.arr) : null,
+    parking: r.lot, fee: r.fee, memo: null, ord: 1000 + i
+  })));
+  const dm = (v) => (v ? toMin(v) : -1);
+  return rows.sort((a, b) => b.date.localeCompare(a.date) || dm(b.depart) - dm(a.depart) || b.ord - a.ord);
+}
+/** 当月（ym="YYYY-MM"）の駐車場代。料金未記録（null）は合計に入れず件数だけ数える。days は料金が入っている日の数 */
+function monthlyParking(rows, ym) {
+  const inMonth = rows.filter((r) => r.date.slice(0, 7) === ym);
+  const withFee = inMonth.filter((r) => typeof r.fee === "number");
+  return {
+    total: withFee.reduce((a, r) => a + r.fee, 0),
+    count: withFee.length,
+    days: new Set(withFee.map((r) => r.date)).size,
+    unrecorded: inMonth.length - withFee.length
+  };
+}
+function addDays(ymd, n) {
+  const [y, m, d] = ymd.split("-").map(Number);
+  const t = new Date(Date.UTC(y, m - 1, d + n));
+  return t.getUTCFullYear() + "-" + String(t.getUTCMonth() + 1).padStart(2, "0") + "-" + String(t.getUTCDate()).padStart(2, "0");
+}
+/** 明日のプレビュー。kind: "work"（places・top＝先頭拠点のおすすめ1位）／"off"／"none"（未登録） */
+function tomorrowInfo(data, shifts, ymd) {
+  const date = addDays(ymd, 1);
+  if (!Object.prototype.hasOwnProperty.call(shifts, date)) return { kind: "none", date };
+  const places = placeNames(shifts[date]);
+  if (!places.length) return { kind: "off", date };
+  const top = sortLots((data.parking && data.parking[places[0]]) || [], "rec")[0] || null;
+  return { kind: "work", date, places, top };
+}
 function formatMD(ymd) {
   const [, m, d] = ymd.split("-").map(Number);
   return m + "/" + d;
@@ -407,7 +658,9 @@ function formatFee(fee) {
   return fee.toLocaleString("ja-JP") + "円";
 }
 
-const CommuteCore = { APP_VER, DATA, toMin, fromMin, durationMin, todayTokyo, nowMinTokyo, weekdayOf, splitPlace, shiftOn, nextWorkShift, outboundStats, arrivalWindow, recommendedRoute, representativeRange, rangeBreakdown, arrivalFromNow, routeTimeText, routeKind, navUrlFor, mapUrlFor, samplesNewestFirst, formatFee, sortLots, PARK_SORTS, yen };
+const CommuteCore = { APP_VER, DATA, toMin, fromMin, durationMin, todayTokyo, nowMinTokyo, weekdayOf, splitPlace, shiftOn, nextWorkShift, outboundStats, arrivalWindow, recommendedRoute, representativeRange, rangeBreakdown, arrivalFromNow, routeTimeText, routeKind, navUrlFor, mapUrlFor, samplesNewestFirst, formatFee, sortLots, PARK_SORTS, yen,
+  PLACE_IDS, SHIFT_KEY, DEFAULT_SHIFTS, cleanShifts, loadShifts, saveShifts, toggleShiftPlace, placeNames, shiftLabel, daysInMonth, addMonth, monthDates,
+  RECORD_KEY, cleanRecord, cleanRecords, loadRecords, saveRecords, mergedRecords, monthlyParking, addDays, tomorrowInfo };
 globalThis.CommuteCore = CommuteCore;
 
 /* ===== 描画（テキストは textContent のみで入れる） ===== */
@@ -524,7 +777,8 @@ const todayState = { date: null, facility: null };
  */
 function renderToday(view, ymd, nowMin, selected) {
   if (nowMin === undefined || nowMin === null) nowMin = nowMinTokyo();
-  const s = shiftOn(DATA, ymd);
+  const shifts = currentShifts(); // v1.3.0: 端末内保存のシフトを読む
+  const s = shiftOn(shifts, ymd);
   const working = !!(s && s.place);
   const places = working ? splitPlace(s.place) : [];
   if (selected === undefined) selected = working ? places[0] : null;
@@ -534,7 +788,7 @@ function renderToday(view, ymd, nowMin, selected) {
   const [, m, d] = ymd.split("-").map(Number);
   view.appendChild(el("div", { class: "card" }, [
     el("div", { class: "date-big", text: m + "月" + d + "日（" + weekdayOf(ymd) + "）" }),
-    el("div", { class: "date-sub", text: ymd.slice(0, 4) + "年・" + DATA.homeArea + "から" })
+    el("div", { class: "date-sub", text: ymd.slice(0, 4) + "年" })
   ]));
 
   if (working) {
@@ -544,7 +798,7 @@ function renderToday(view, ymd, nowMin, selected) {
       places.length > 1 ? el("span", { class: "pill warn", text: "複合日：" + places.join(" → ") + "（朝は" + places[0] + "）" }) : null
     ]));
   } else {
-    const next = nextWorkShift(DATA, ymd);
+    const next = nextWorkShift(shifts, ymd);
     view.appendChild(el("div", { class: "card" }, [
       el("div", { class: "off", text: s ? "今日は休み" : "今日のシフトは未登録" }),
       next
@@ -561,6 +815,7 @@ function renderToday(view, ymd, nowMin, selected) {
   view.appendChild(facilityChips(selected, (f) => renderToday(view, ymd, undefined, f)));
   if (!selected) {
     view.appendChild(el("div", { class: "fine", text: "行き先を選ぶと、ルート候補と駐車場を表示します。" }));
+    view.appendChild(tomorrowCard(shifts, ymd));
     return;
   }
   // 休みの日は「今出発すると」カードを出さない
@@ -573,10 +828,46 @@ function renderToday(view, ymd, nowMin, selected) {
   view.appendChild(parkingSection(selected, others));
   view.appendChild(el("h2", { text: selected + "へのルート候補" }));
   for (const n of routeCards(selected)) view.appendChild(n);
+  view.appendChild(tomorrowCard(shifts, ymd));
 }
 
-function renderSamples(view) {
+/** v1.4.0: 今日タブ末尾の「明日」カード */
+function tomorrowCard(shifts, ymd) {
+  const t = tomorrowInfo(DATA, shifts, ymd);
+  const head = "明日 " + formatMD(t.date) + "（" + weekdayOf(t.date) + "）";
+  const kids = [el("div", { class: "label", text: "明日" })];
+  if (t.kind === "work") {
+    kids.push(el("div", { class: "tomorrow-main", text: head + t.places.join(" → ") }));
+    kids.push(el("div", { class: "tomorrow-sub", text: t.top ? "駐車場1位：" + t.top.name + "（9時間 " + yen(t.top.dayCost) + "）" : "駐車場は未調査" }));
+  } else {
+    kids.push(el("div", { class: "tomorrow-main", text: t.kind === "off" ? "明日は休み" : "明日のシフトは未登録" }));
+  }
+  return el("div", { class: "card tomorrow-card", "data-kind": t.kind }, kids);
+}
+
+/** v1.4.0: 記録フォームの入力中の状態（タブを描き直しても保持） */
+const recForm = { date: null, dir: "out", fac: "higashi", dep: "", arr: "", lot: "", fee: "", msg: "", ok: false };
+
+function renderSamples(view, ymd) {
+  if (!ymd) ymd = todayTokyo();
+  if (!recForm.date) recForm.date = ymd;
+  const redraw = () => renderSamples(view, ymd);
+  const rows = mergedRecords(DATA, currentRecords());
+  const mp = monthlyParking(rows, ymd.slice(0, 7));
+  const [, mm] = ymd.split("-").map(Number);
+
   view.replaceChildren();
+  // 今月の駐車場代（申請見込み）
+  view.appendChild(el("div", { class: "card total-card" }, [
+    el("div", { class: "label", text: mm + "月の駐車場代（申請見込み）" }),
+    el("div", { class: "total-amount", text: yen(mp.total) }),
+    el("div", { class: "total-sub" }, [
+      mp.days + "日分",
+      mp.unrecorded ? el("span", { class: "warn", text: "料金未記録 " + mp.unrecorded + "件" }) : null
+    ])
+  ]));
+  view.appendChild(recordForm(redraw));
+
   view.appendChild(el("h2", { text: "実走記録の集計（施設別「行き」）" }));
   const tbody = el("tbody");
   for (const f of Object.keys(DATA.facilities)) {
@@ -590,33 +881,189 @@ function renderSamples(view) {
     tbody
   ])]));
   view.appendChild(el("h2", { text: "実走記録（新しい順）" }));
-  for (const s of samplesNewestFirst(DATA)) {
-    view.appendChild(el("div", { class: "card" }, [
+  for (const s of rows) {
+    let del = null;
+    if (s.user) {
+      del = el("button", { type: "button", class: "rec-del", "data-id": s.id, "aria-label": "この記録を削除", text: "削除" });
+      del.addEventListener("click", () => {
+        const ok = typeof globalThis.confirm === "function" ? globalThis.confirm(formatMD(s.date) + " " + s.facility + "（" + s.dir + "）の記録を削除しますか？") : false;
+        if (!ok) return;
+        deleteRecord(s.id);
+        recForm.msg = ""; recForm.ok = false;
+        redraw();
+      });
+    }
+    view.appendChild(el("div", { class: "card rec-item" + (s.user ? " user" : ""), "data-key": s.key }, [
       el("div", { class: "sample-head" }, [
         el("span", { class: "d", text: formatMD(s.date) + "（" + weekdayOf(s.date) + "） " + s.facility }),
-        el("span", { class: "dir" + (s.dir === "帰り" ? " back" : ""), text: s.dir })
+        el("span", { class: "tags" }, [el("span", { class: "dir" + (s.dir === "帰り" ? " back" : ""), text: s.dir }), del])
       ]),
-      el("div", { class: "sample-time" }, [s.depart + " → " + s.arrive, el("small", { text: "　" + s.minutes + "分" })]),
-      el("div", { class: "park-row" }, [el("span", { class: "k", text: "駐車場" }), s.parking]),
-      el("div", { class: "park-row" }, [el("span", { class: "k", text: "駐車代" }), formatFee(s.fee)]),
-      el("div", { class: "park-row" }, [el("span", { class: "k", text: "メモ" }), s.memo || "—"])
+      el("div", { class: "sample-time" }, [(s.depart || "—") + " → " + (s.arrive || "—"), s.minutes === null ? null : el("small", { text: "　" + s.minutes + "分" })]),
+      el("div", { class: "park-row" }, [el("span", { class: "k", text: "駐車場" }), s.parking || "—"]),
+      el("div", { class: "park-row" }, [el("span", { class: "k", text: "駐車代" }), s.user && s.fee === null ? "—" : formatFee(s.fee)]),
+      s.user ? null : el("div", { class: "park-row" }, [el("span", { class: "k", text: "メモ" }), s.memo || "—"])
     ]));
   }
 }
 
+/** v1.4.0: 記録の入力フォーム。チップを押しても入力欄の値は recForm に退避して保持する */
+function recordForm(redraw) {
+  const lots = DATA.parking[PLACE_IDS[recForm.fac]] || [];
+  const inp = (type, cls, val, extra) => {
+    const n = el("input", Object.assign({ type, class: cls }, extra || {}));
+    n.value = val;
+    return n;
+  };
+  const date = inp("date", "rec-date", recForm.date, { "aria-label": "日付" });
+  const dep = inp("time", "rec-dep", recForm.dep, { "aria-label": "出発" });
+  const arr = inp("time", "rec-arr", recForm.arr, { "aria-label": "到着" });
+  const fee = inp("number", "rec-fee", recForm.fee, { "aria-label": "料金（円）", inputmode: "numeric", min: "0", step: "1", placeholder: "円" });
+  const lot = el("select", { class: "rec-lot", "aria-label": "使った駐車場" },
+    [el("option", { value: "", text: "—（未選択）" })].concat(lots.map((p) => el("option", { value: p.name, text: p.name + "（" + yen(p.dayCost) + "）" }))));
+  lot.value = recForm.lot;
+  const sync = () => {
+    recForm.date = date.value || ""; recForm.dep = dep.value || ""; recForm.arr = arr.value || "";
+    recForm.lot = lot.value || ""; recForm.fee = fee.value === undefined || fee.value === null ? "" : String(fee.value);
+  };
+  // 駐車場を選ぶと料金欄にその駐車場の9時間料金を入れる（あとで書き換え可）
+  lot.addEventListener("change", () => {
+    const p = lots.find((x) => x.name === lot.value);
+    if (p) fee.value = String(p.dayCost);
+    sync();
+  });
+  const chipGroup = (cls, label, entries, cur, onPick, extraCls) => el("div", { class: "chips" + (extraCls ? " " + extraCls : ""), role: "group", "aria-label": label }, entries.map(([k, text]) => {
+    const b = el("button", { type: "button", class: cls, "data-val": k, "aria-pressed": String(k === cur), text });
+    b.addEventListener("click", () => { sync(); onPick(k); recForm.msg = ""; redraw(); });
+    return b;
+  }));
+  const dirChips = chipGroup("rec-dir", "区分", Object.keys(DIR_LABEL).map((k) => [k, DIR_LABEL[k]]), recForm.dir, (k) => { recForm.dir = k; }, "two");
+  const facChips = chipGroup("rec-fac", "行き先", Object.keys(PLACE_IDS).map((k) => [k, PLACE_IDS[k]]), recForm.fac, (k) => {
+    if (k !== recForm.fac) { recForm.fac = k; recForm.lot = ""; recForm.fee = ""; }
+  });
+  const save = el("button", { type: "button", class: "rec-save", text: "記録する" });
+  save.addEventListener("click", () => {
+    sync();
+    const err = (m) => { recForm.msg = m; recForm.ok = false; redraw(); };
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(recForm.date)) return err("日付を入れてください");
+    if (recForm.dep && !HHMM_RE.test(recForm.dep)) return err("出発の時刻が読めません");
+    if (recForm.arr && !HHMM_RE.test(recForm.arr)) return err("到着の時刻が読めません");
+    let feeVal = null;
+    if (recForm.fee.trim() !== "") {
+      feeVal = Number(recForm.fee);
+      if (!Number.isFinite(feeVal) || feeVal < 0) return err("料金は0以上の数字で入れてください");
+    }
+    const saved = addRecord({ date: recForm.date, dir: recForm.dir, fac: recForm.fac, dep: recForm.dep || null, arr: recForm.arr || null, lot: recForm.lot || null, fee: feeVal });
+    if (!saved) return err("記録できませんでした");
+    // 日付・区分・行き先は残し、時刻・駐車場・料金は空に戻す
+    recForm.dep = ""; recForm.arr = ""; recForm.lot = ""; recForm.fee = "";
+    recForm.msg = formatMD(saved.date) + " " + PLACE_IDS[saved.fac] + "（" + DIR_LABEL[saved.dir] + "）を記録しました";
+    recForm.ok = true;
+    redraw();
+  });
+  const field = (label, ctrl) => el("div", { class: "field" }, [el("div", { class: "label", text: label }), ctrl]);
+  return el("div", { class: "card rec-form" }, [
+    field("日付", date),
+    field("区分", dirChips),
+    field("行き先", facChips),
+    el("div", { class: "field row2" }, [
+      el("div", null, [el("div", { class: "label", text: "出発" }), dep]),
+      el("div", null, [el("div", { class: "label", text: "到着" }), arr])
+    ]),
+    field("使った駐車場", lot),
+    field("料金（円）", fee),
+    save,
+    el("div", { class: "form-msg" + (recForm.ok ? " ok" : ""), role: "status", text: recForm.msg }),
+    el("div", { class: "fine", style: "margin:8px 0 0", text: "入力した記録はこの端末にだけ保存されます。時刻・駐車場・料金は空欄でも記録できます。" })
+  ]);
+}
+
+/** シフトタブの表示状態（今日が変わったら今月・パネル閉に戻す） */
+const shiftUi = { today: null, month: null, editing: null };
+
+/** v1.3.0: シフトタブ（月切り替え・行タップで編集パネル・端末内保存・リセット） */
 function renderShift(view, ymd) {
+  if (ymd !== shiftUi.today) { shiftUi.today = ymd; shiftUi.month = ymd.slice(0, 7); shiftUi.editing = null; }
+  const redraw = () => renderShift(view, ymd);
+  const shifts = currentShifts();
+  const ym = shiftUi.month;
+  const [y, m] = ym.split("-").map(Number);
+
   view.replaceChildren();
-  view.appendChild(el("h2", { text: "2026年11月のシフト（" + DATA.shiftHours + "）" }));
+  const prev = el("button", { type: "button", class: "month-prev", "aria-label": "前月", text: "‹ 前月" });
+  const next = el("button", { type: "button", class: "month-next", "aria-label": "翌月", text: "翌月 ›" });
+  prev.addEventListener("click", () => { shiftUi.month = addMonth(shiftUi.month, -1); shiftUi.editing = null; redraw(); });
+  next.addEventListener("click", () => { shiftUi.month = addMonth(shiftUi.month, 1); shiftUi.editing = null; redraw(); });
+  view.appendChild(el("div", { class: "month-nav" }, [prev, el("h2", { class: "month-title", text: y + "年" + m + "月" }), next]));
+  view.appendChild(el("div", { class: "fine", text: DATA.shiftHours + "　日付をタップすると勤務先を入力できます。" }));
+
   const list = el("div", { class: "card shift-list" });
-  for (const s of DATA.shifts.slice().sort((a, b) => a.date.localeCompare(b.date))) {
-    const wi = weekdayIndex(s.date);
-    list.appendChild(el("div", { class: "shift-row" + (s.date === ymd ? " today" : "") }, [
-      el("span", { class: "sd", text: formatMD(s.date) }),
+  for (const d of monthDates(ym)) {
+    const wi = weekdayIndex(d);
+    const ids = shifts[d] || [];
+    const row = el("button", { type: "button", class: "shift-row" + (d === ymd ? " today" : "") + (d === shiftUi.editing ? " editing" : ""), "data-date": d }, [
+      el("span", { class: "sd", text: formatMD(d) }),
       el("span", { class: "sw" + (wi === 0 ? " sun" : wi === 6 ? " sat" : ""), text: WEEK[wi] }),
-      el("span", { class: "sp" + (s.place ? "" : " off"), text: s.place ? splitPlace(s.place).join(" → ") : "休み" })
-    ]));
+      el("span", { class: "sp" + (ids.length ? "" : " off"), text: shiftLabel(ids) })
+    ]);
+    row.addEventListener("click", () => { shiftUi.editing = d; redraw(); });
+    list.appendChild(row);
   }
   view.appendChild(list);
+
+  const reset = el("button", { type: "button", class: "reset-btn", text: "入力をリセット" });
+  reset.addEventListener("click", () => {
+    const ok = typeof globalThis.confirm === "function" ? globalThis.confirm("入力したシフトを消して、最初の状態に戻しますか？") : false;
+    if (!ok) return;
+    shiftUi.editing = null;
+    resetShifts();
+    redraw();
+  });
+  view.appendChild(reset);
+
+  if (shiftUi.editing) for (const n of shiftSheet(shiftUi.editing, redraw)) view.appendChild(n);
+}
+
+/** 編集パネル（シート）。チップを押した時点で即保存 */
+function shiftSheet(d, redraw) {
+  const ids = currentShifts()[d] || [];
+  const close = () => { shiftUi.editing = null; redraw(); };
+  const backdrop = el("div", { class: "sheet-backdrop" });
+  backdrop.addEventListener("click", close);
+  const [, m, day] = d.split("-").map(Number);
+  const chips = el("div", { class: "chips", role: "group", "aria-label": "勤務先" }, Object.keys(PLACE_IDS).map((id) => {
+    const idx = ids.indexOf(id);
+    const b = el("button", { type: "button", class: "place-chip", "data-place": id, "aria-pressed": String(idx >= 0) }, [
+      PLACE_IDS[id],
+      idx >= 0 && ids.length > 1 ? el("span", { class: "ord", text: String(idx + 1) }) : null
+    ]);
+    if (idx < 0 && ids.length >= MAX_PLACES) { b.disabled = true; b.setAttribute("disabled", ""); }
+    b.addEventListener("click", () => { setShift(d, toggleShiftPlace(currentShifts()[d] || [], id)); redraw(); });
+    return b;
+  }));
+  const off = el("button", { type: "button", class: "sheet-off", text: "休みにする" });
+  off.addEventListener("click", () => { setShift(d, []); redraw(); });
+  const closeBtn = el("button", { type: "button", class: "sheet-close", text: "閉じる" });
+  closeBtn.addEventListener("click", close);
+  const sheet = el("div", { class: "sheet", role: "dialog", "aria-label": "シフトの編集" }, [
+    el("div", { class: "sheet-title", text: m + "月" + day + "日（" + weekdayOf(d) + "）" }),
+    el("div", { class: "sheet-now", text: "現在：" + shiftLabel(ids) + "　（2つまで・押した順が勤務順）" }),
+    chips,
+    el("div", { class: "sheet-actions" }, [off, closeBtn]),
+    el("div", { class: "fine", text: "シフトの入力はこの端末にだけ保存されます" })
+  ]);
+  return [backdrop, sheet];
+}
+
+/** v1.4.0: タブの選択表示（選択中＝is-active で赤）。返り値は選択中タブのラベル */
+const TAB_NAMES = { today: "今日", samples: "記録", shift: "シフト" };
+function setActiveTab(buttons, tab) {
+  for (const b of buttons) {
+    const on = b.dataset.tab === tab;
+    b.setAttribute("aria-selected", String(on));
+    if (b.classList) b.classList.toggle("is-active", on);
+    else b.className = on ? "is-active" : "";
+  }
+  return TAB_NAMES[tab] || "";
 }
 
 function boot() {
@@ -629,7 +1076,7 @@ function boot() {
     const nowMin = nowMinTokyo();
     if (ymd !== renderedFor) {
       renderedFor = ymd;
-      renderSamples(views.samples);
+      renderSamples(views.samples, ymd);
       renderShift(views.shift, ymd);
       renderedMin = nowMin;
       renderToday(views.today, ymd, nowMin); // 日付が変わったら初期選択に戻す
@@ -644,10 +1091,18 @@ function boot() {
   }
   function show(tab) {
     for (const k of Object.keys(views)) views[k].hidden = k !== tab;
-    for (const b of document.querySelectorAll("nav.tabbar button")) b.setAttribute("aria-selected", String(b.dataset.tab === tab));
+    document.getElementById("tab-name").textContent = setActiveTab(document.querySelectorAll("nav.tabbar button"), tab);
     window.scrollTo(0, 0);
   }
   for (const b of document.querySelectorAll("nav.tabbar button")) b.addEventListener("click", () => show(b.dataset.tab));
+  // v1.3.0: シフトを編集したら今日タブ（今日の勤務・次の勤務・行き先の初期選択）を描き直す
+  shiftStore.onChange = () => renderToday(views.today, renderedFor || todayTokyo(), nowMinTokyo());
+  // v1.3.0: ダブルタップ拡大の無効化（入力欄は除外）
+  document.addEventListener("dblclick", (e) => {
+    const t = e.target;
+    if (t && t.closest && t.closest("input, textarea")) return;
+    e.preventDefault();
+  }, { passive: false });
   // ホーム画面アプリは開きっぱなしになりやすいので、復帰時に日付が変わっていれば描き直す
   document.addEventListener("visibilitychange", () => { if (!document.hidden) renderAll(); });
   setInterval(() => { if (!document.hidden) renderAll(); }, 30000);
