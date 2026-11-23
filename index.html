@@ -217,7 +217,7 @@
 </nav>
 <script>
 "use strict";
-const APP_VER = "1.4.1";
+const APP_VER = "1.4.2";
 
 /* ===== データ（記録の追加はここを書き換えて再公開する） ===== */
 const DATA = {
@@ -272,6 +272,8 @@ const DATA = {
       { name: "テクノパーキング甲南通り第2", addr: "中央町15-17", distM: 350, walkMin: 5, dayCost: 800, spaces: 49, fee: "60分100円・昼間12時間最大800円・夜間最大500円", note: "" }
     ],
     "上荒田": [
+      // v1.4.2: 施設の無料駐車場（2026-11-23 ユーザー情報）。pinned＝職員駐車場と同じく全ての並びで先頭固定
+      { name: "施設駐車場（無料）", addr: "上荒田町31-12", distM: 10, walkMin: 1, dayCost: 0, spaces: null, fee: "無料", note: "施設の西側。Googleマップに名称登録なし（リンクは座標指定）。台数は未確認", pinned: true, mapCoord: "31.574677,130.546401" },
       { name: "上荒田Mパーキング", addr: "上荒田町31-9", distM: 160, walkMin: 2, dayCost: 500, spaces: 18, fee: "60分100円・入庫後12時間最大500円", note: "" },
       { name: "セイワパーク上荒田町", addr: "上荒田町28-8", distM: 230, walkMin: 3, dayCost: 500, spaces: 7, fee: "60分100円・入庫から24時間最大500円・夜間最大300円", note: "現金のみ" },
       { name: "テクノパーキング上荒田町第8", addr: "上荒田町", distM: 210, walkMin: 3, dayCost: 500, spaces: null, fee: "60分100円・入庫後24時間最大500円・夜間最大200円", note: "公式一覧に掲載がなく集約サイトで確認" },
@@ -614,7 +616,7 @@ function mapUrlFor(lot) {
   return MAP_BASE + encodeURIComponent(lot.name + " 鹿児島市" + lot.addr);
 }
 /** 駐車場の並び替え（v1.2.0）。mode: "rec"＝おすすめ順（データ順）／"cheap"＝安い順／"near"＝近い順
- *  職員駐車場（staff）はどの並びでも先頭に固定。null の距離は後ろ。最後はデータ順で安定させる */
+ *  職員駐車場（staff）と施設の無料駐車場（pinned, v1.4.2）はどの並びでも先頭に固定。null の距離は後ろ。最後はデータ順で安定させる */
 const PARK_SORTS = [["rec", "おすすめ順"], ["cheap", "安い順"], ["near", "近い順"]];
 function sortLots(lots, mode) {
   const nl = (v) => (v === null || v === undefined ? Infinity : v);
@@ -623,7 +625,7 @@ function sortLots(lots, mode) {
     near: (a, b) => nl(a.lot.distM) - nl(b.lot.distM) || a.lot.dayCost - b.lot.dayCost
   }[mode];
   return lots.map((lot, i) => ({ lot, i })).sort((a, b) =>
-    (b.lot.staff ? 1 : 0) - (a.lot.staff ? 1 : 0) || (cmp ? cmp(a, b) : 0) || a.i - b.i
+    (b.lot.staff || b.lot.pinned ? 1 : 0) - (a.lot.staff || a.lot.pinned ? 1 : 0) || (cmp ? cmp(a, b) : 0) || a.i - b.i
   ).map((x) => x.lot);
 }
 function yen(n) {
@@ -715,7 +717,7 @@ function parkingCards(facility) {
     return el("div", { class: "card park-card" }, [
       el("div", { class: "park-name" }, [
         (i + 1) + ". " + lot.name,
-        lot.staff && lot.dayCost === 0 ? el("span", { class: "pill free", text: "無料" }) : null,
+        (lot.staff || lot.pinned) && lot.dayCost === 0 ? el("span", { class: "pill free", text: "無料" }) : null,
         lot.staff ? el("span", { class: "pill", text: "職員用" }) : null
       ]),
       el("div", { class: "park-cost" }, ["9時間 " + yen(lot.dayCost)]),
